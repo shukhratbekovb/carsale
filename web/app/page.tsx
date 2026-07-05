@@ -1,10 +1,15 @@
+import { ListingCard } from '@/components/domain/listing-card';
+import { mockListings } from '@/lib/mock/listings';
+
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-24">
-      <h1 className="text-4xl font-bold">Welcome</h1>
-      <p className="mt-4 text-lg text-gray-600">
-        Get started by editing app/page.tsx
-      </p>
+    <main className="mx-auto max-w-7xl px-4 py-8">
+      <h1 className="mb-6 text-2xl font-bold">Объявления</h1>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {mockListings.map((listing) => (
+          <ListingCard key={listing.id} listing={listing} />
+        ))}
+      </div>
     </main>
   );
 }

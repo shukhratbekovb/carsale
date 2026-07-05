@@ -12,6 +12,10 @@ const config: Config = {
       colors: {
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
+        card: {
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))',
+        },
         primary: {
           DEFAULT: 'hsl(var(--primary))',
           foreground: 'hsl(var(--primary-foreground))',
@@ -34,6 +38,22 @@ const config: Config = {
         },
         border: 'hsl(var(--border))',
         ring: 'hsl(var(--ring))',
+        // Deal Rating — семантика зафиксирована в frontend-plan.md §6, контраст
+        // проверен под WCAG 2.1 AA (>= 4.5:1 для белого текста, см. §2/FE-OQ-1)
+        deal: {
+          great: {
+            DEFAULT: 'hsl(var(--deal-great))',
+            foreground: 'hsl(var(--deal-great-foreground))',
+          },
+          fair: {
+            DEFAULT: 'hsl(var(--deal-fair))',
+            foreground: 'hsl(var(--deal-fair-foreground))',
+          },
+          overpriced: {
+            DEFAULT: 'hsl(var(--deal-overpriced))',
+            foreground: 'hsl(var(--deal-overpriced-foreground))',
+          },
+        },
       },
       borderRadius: {
         lg: 'var(--radius)',
