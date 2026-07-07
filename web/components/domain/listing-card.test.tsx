@@ -1,0 +1,43 @@
+import { render, screen } from '@/src/test/utils';
+import { ListingCard } from './listing-card';
+import { mockListings } from '@/lib/mock/listings';
+
+// Listing #4 in the fixtures has mileageFlag: true with a reason, a non-UNAVAILABLE
+// deal rating (FAIR_PRICE) and sellerVerified: true — an ideal fixture for asserting
+// that ML-flags render together with the card, not lazily (FR-07, frontend-plan.md §6/§8).
+const flaggedListing = mockListings.find((listing) => listing.id === '4')!;
+
+test('renders make/model/year, price and city in the initial render', () => {
+  render(<ListingCard listing={flaggedListing} />);
+
+  expect(screen.getByText(`${flaggedListing.make} ${flaggedListing.model}, ${flaggedListing.year}`)).toBeInTheDocument();
+  expect(screen.getByText('62 000 000 сум')).toBeInTheDocument();
+  expect(screen.getByText(/Ташкент/)).toBeInTheDocument();
+});
+
+test('renders the Deal Rating badge and mileage flag synchronously, not lazily', () => {
+  render(<ListingCard listing={flaggedListing} />);
+
+  // No act()/waitFor — these must be present in the very first render output.
+  expect(screen.getByText('Честная цена')).toBeInTheDocument();
+  expect(screen.getByText('Пробег требует проверки')).toBeInTheDocument();
+});
+
+test('renders the verified badge when the seller is verified', () => {
+  render(<ListingCard listing={flaggedListing} />);
+  expect(screen.getByText('Проверен')).toBeInTheDocument();
+});
+
+test('omits the mileage flag when the listing has no flag', () => {
+  const unflaggedListing = mockListings.find((listing) => listing.id === '1')!;
+  render(<ListingCard listing={unflaggedListing} />);
+
+  expect(screen.getByText('Отличная сделка')).toBeInTheDocument();
+  expect(screen.queryByText('Пробег требует проверки')).not.toBeInTheDocument();
+});
+
+test('links to the listing detail page', () => {
+  render(<ListingCard listing={flaggedListing} />);
+  const links = screen.getAllByRole('link');
+  expect(links[0]).toHaveAttribute('href', `/catalog/${flaggedListing.id}`);
+});
