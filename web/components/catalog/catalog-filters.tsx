@@ -3,29 +3,8 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { type ReactNode, useState } from 'react';
 import { Input } from '@/components/ui/input';
+import { DEAL_RATING_LABELS, DRIVE_TYPE_LABELS, TRANSMISSION_LABELS } from '@/lib/labels';
 import { mockListings } from '@/lib/mock/listings';
-import type { DealRatingLabel, DriveType, Transmission } from '@/types/listing';
-
-const TRANSMISSION_LABELS: Record<Transmission, string> = {
-  AUTOMATIC: 'Автомат',
-  MANUAL: 'Механика',
-  CVT: 'Вариатор',
-  ROBOT: 'Робот',
-};
-
-const DRIVE_TYPE_LABELS: Record<DriveType, string> = {
-  FWD: 'Передний',
-  RWD: 'Задний',
-  AWD: 'Полный (AWD)',
-  '4WD': 'Полный (4WD)',
-};
-
-const DEAL_RATING_LABELS: Record<DealRatingLabel, string> = {
-  GREAT_DEAL: 'Отличная сделка',
-  FAIR_PRICE: 'Честная цена',
-  OVERPRICED: 'Завышенная цена',
-  UNAVAILABLE: 'Оценка недоступна',
-};
 
 const MAKES = Array.from(new Set(mockListings.map((l) => l.make))).sort();
 const CITIES = Array.from(new Set(mockListings.map((l) => l.city))).sort();

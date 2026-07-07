@@ -1,13 +1,6 @@
+import { DEAL_RATING_LABELS } from '@/lib/labels';
 import { cn } from '@/lib/utils';
 import type { DealRatingLabel } from '@/types/listing';
-
-// PRD §5.3: цветовой индикатор + текстовая метка, без голой иконки без пояснения.
-const LABELS: Record<DealRatingLabel, string> = {
-  GREAT_DEAL: 'Отличная сделка',
-  FAIR_PRICE: 'Честная цена',
-  OVERPRICED: 'Завышенная цена',
-  UNAVAILABLE: 'Оценка недоступна',
-};
 
 const STYLES: Record<DealRatingLabel, string> = {
   GREAT_DEAL: 'bg-deal-great text-deal-great-foreground',
@@ -24,7 +17,7 @@ export function DealRatingBadge({ label }: { label: DealRatingLabel }) {
         STYLES[label]
       )}
     >
-      {LABELS[label]}
+      {DEAL_RATING_LABELS[label]}
     </span>
   );
 }
