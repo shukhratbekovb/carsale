@@ -44,3 +44,24 @@ export const FUEL_TYPE_LABELS: Record<FuelType, string> = {
   ELECTRIC: 'Электро',
   HYBRID: 'Гибрид',
 };
+
+// Копирайт для потока входа: номер телефона → SMS OTP (FR-01, UC-03, см. §9 плана).
+export const AUTH_LABELS = {
+  loginTitle: 'Вход',
+  otpTitle: 'Подтверждение кода',
+  phoneLabel: 'Номер телефона',
+  phonePlaceholder: '+998901234567',
+  getCode: 'Получить код',
+  sendingCode: 'Отправка...',
+  codeLabel: 'Код из SMS',
+  codeSentTo: (phone: string) => `Код отправлен на ${phone}`,
+  confirm: 'Подтвердить',
+  verifying: 'Проверка...',
+  resend: 'Отправить повторно',
+  resendIn: (seconds: number) => `Отправить повторно через ${seconds} с`,
+  changePhone: 'Изменить номер',
+  invalidCode: (attemptsRemaining: number) => `Неверный код. Осталось попыток: ${attemptsRemaining}`,
+  smsUnavailable: 'Не удалось отправить SMS, попробуйте позже',
+  lockedTitle: 'Слишком много попыток',
+  lockedMessage: (time: string) => `Повторите через ${time}`,
+};

@@ -1,15 +1,28 @@
+import { PhoneForm } from '@/components/auth/phone-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { AUTH_LABELS } from '@/lib/labels';
 
-// Заглушка маршрута. Форма ввода телефона + SMS OTP (FR-01, UC-03) — задача FE-2.
-export default function LoginPage() {
+interface LoginPageProps {
+  searchParams: Record<string, string | string[] | undefined>;
+}
+
+function firstValue(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+// Вход по номеру телефона + SMS OTP (FR-01, UC-03). Логика/валидация — в
+// lib/validation/auth.ts и lib/mock/otp.ts, эта страница только собирает layout.
+export default function LoginPage({ searchParams }: LoginPageProps) {
+  const returnTo = firstValue(searchParams.return);
+
   return (
     <main className="mx-auto flex max-w-md flex-col px-4 py-16">
       <Card>
         <CardHeader>
-          <CardTitle>Вход</CardTitle>
+          <CardTitle>{AUTH_LABELS.loginTitle}</CardTitle>
         </CardHeader>
-        <CardContent className="text-sm text-muted-foreground">
-          Форма ввода номера телефона появится в задаче FE-2 (Auth UI).
+        <CardContent>
+          <PhoneForm returnTo={returnTo} />
         </CardContent>
       </Card>
     </main>
