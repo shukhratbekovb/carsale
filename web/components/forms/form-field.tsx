@@ -28,7 +28,13 @@ export function FormField<TFieldValues extends FieldValues>({
               {label}
             </label>
           )}
-          <Input id={name} {...field} {...inputProps} error={getErrorMessage(fieldState.error)} />
+          <Input
+            id={name}
+            {...field}
+            value={field.value ?? ''}
+            {...inputProps}
+            error={getErrorMessage(fieldState.error)}
+          />
         </div>
       )}
     />
