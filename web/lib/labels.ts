@@ -65,3 +65,60 @@ export const AUTH_LABELS = {
   lockedTitle: 'Слишком много попыток',
   lockedMessage: (time: string) => `Повторите через ${time}`,
 };
+
+// Копирайт мастера размещения объявления (FE-3, FR-02/03/05, см. §9 плана).
+export const SELL_LABELS = {
+  pageTitle: 'Разместить объявление',
+  stepTitles: {
+    VEHICLE_DETAILS: 'Характеристики',
+    PHOTOS: 'Фотографии',
+    PRICE: 'Оценка цены',
+    REVIEW: 'Проверка и публикация',
+  } as Record<'VEHICLE_DETAILS' | 'PHOTOS' | 'PRICE' | 'REVIEW', string>,
+  back: 'Назад',
+  next: 'Далее',
+  submit: 'Опубликовать',
+  submitting: 'Отправка...',
+
+  makeLabel: 'Марка',
+  modelLabel: 'Модель',
+  yearLabel: 'Год выпуска',
+  mileageLabel: 'Пробег, км',
+  conditionLabel: 'Состояние',
+  colorLabel: 'Цвет',
+  transmissionLabel: 'Коробка передач',
+  driveTypeLabel: 'Привод',
+  engineVolumeLabel: 'Объём двигателя, л',
+  fuelTypeLabel: 'Тип топлива',
+  cityLabel: 'Город',
+  priceLabel: 'Цена, UZS',
+  selectPlaceholder: 'Выберите',
+
+  photosHint: (max: number) => `До ${max} фото. Госномер и VIN замазываются автоматически.`,
+  addPhotos: 'Добавить фото',
+  photoRemove: 'Удалить',
+  photoBlurPending: 'Определяем номер и VIN...',
+  photoBlurDone: 'Номер и VIN замазаны',
+  photoBlurFailed: 'Не удалось определить область для блюра',
+  photoBlurRetry: 'Повторить',
+  photoAdjustBlur: 'Скорректировать область блюра',
+  photoBlurRegionLabel: (index: number) => `Область ${index + 1} (X, Y, ширина, высота в % от фото)`,
+
+  descriptionLabel: 'Описание',
+  descriptionPlaceholder: 'Расскажите об автомобиле: комплектация, история обслуживания, состояние...',
+
+  priceEstimateLoading: 'Оцениваем справедливую цену...',
+  priceEstimateFailed: 'Не удалось получить оценку цены',
+  priceEstimateRetry: 'Повторить',
+  priceEstimateRecommended: (min: number, max: number) =>
+    `Рекомендованный диапазон: ${min.toLocaleString('ru-RU')} – ${max.toLocaleString('ru-RU')} UZS`,
+
+  reviewVehicleTitle: 'Характеристики',
+  reviewPhotosTitle: (count: number) => `Фото (${count})`,
+  reviewPriceTitle: 'Оценка цены',
+  reviewEdit: 'Изменить',
+
+  submittedTitle: 'Объявление отправлено на модерацию',
+  submittedMessage: 'Обычно проверка занимает не более 30 минут. Мы уведомим вас, когда объявление опубликуется.',
+  backToCatalog: 'В каталог',
+};
