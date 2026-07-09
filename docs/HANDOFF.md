@@ -1,4 +1,4 @@
-# Handoff — состояние проекта на 2026-07-09
+# Handoff — состояние проекта на 2026-07-09 (обновлено: старт FE-3)
 
 Снапшот для нового участника (человека или Claude Code сессии), продолжающего работу параллельно. Дополняет [CLAUDE.md](../CLAUDE.md) (правила workflow) и [frontend-plan.md](frontend-plan.md) (полный план, эпики FE-1–FE-10).
 
@@ -19,13 +19,21 @@
     - Data layer: `web/types/auth.ts`, `web/lib/validation/auth.ts` (Zod), `web/lib/mock/otp.ts` (мок-сервис отправки/проверки OTP), `web/lib/auth/otp-flow.ts` (reducer состояния флоу)
     - UI: `/auth/login` (ввод телефона) и `/auth/otp` (ввод кода) — `web/app/auth/{login,otp}/page.tsx`, `web/components/auth/{phone-form,otp-form}.tsx`
     - Тесты: покрыты flow-логика, Zod-схемы, обе формы (`*.test.ts(x)` рядом с исходниками)
+11. **FE-2 подтверждён закрытым (2026-07-09)** — resend-таймер (60 сек) и блокировка после 3 неверных попыток (15 мин) уже были реализованы и покрыты тестами в `otp-flow.ts`/`otp-form.tsx`, проверено при старте FE-3. Единственное, что осталось вне фронтенда — JWT-сессия (httpOnly refresh), блокируется отсутствием Core API/бэкенда.
+12. **FE-3 (wizard размещения объявления, FR-02/03/05) — начат 2026-07-09**:
+    - Data layer: `web/types/sell.ts` (WizardStep, PhotoDraft — discriminated union по статусу блюра, PriceEstimateState — IDLE/LOADING/LOADED/FAILED поверх тех же 4 меток DealRating, что и у каталога, ListingDraft, WizardFlowState), `web/lib/validation/sell.ts` (Zod-схемы по шагам: vehicleDetailsSchema/reviewSchema/photosSchema), `web/lib/mock/photo-blur.ts` (мок CV-детекции блюра), `web/lib/mock/price-estimate.ts` (мок ML-оценки цены, детерминированный по входу), `web/lib/sell/wizard-flow.ts` (pure reducer навигации/мутации черновика, стиль как у `otp-flow.ts`)
+    - UI: `/sell/new` (`web/app/sell/new/page.tsx`) → `SellWizard` (`web/components/sell/sell-wizard.tsx`, useReducer-обёртка над wizard-flow.ts) со степ-индикатором и 4 шагами: `VehicleDetailsStep`, `PhotoUploadStep` (превью + overlay обнаруженных областей блюра + ручная корректировка X/Y/W/H в %), `PriceEstimateWidget` (авто-запрос оценки при входе на шаг, 4 состояния Deal Rating через переиспользуемый `DealRatingBadge`), `ReviewStep` (сводка + публикация → экран «на модерации»)
+    - Новый переиспользуемый `web/components/forms/select-field.tsx` (RHF+Controller обёртка над `<select>`, аналог `form-field.tsx`)
+    - Проверено вживую через Playwright MCP на реальном dev-сервере: полный happy path от характеристик до подтверждения «на модерации», включая загрузку фото и оценку цены
+    - Тесты: `wizard-flow.test.ts`, `validation/sell.test.ts`, `mock/{photo-blur,price-estimate}.test.ts` (от data-agent) + `vehicle-details-step.test.tsx`, `photo-upload-step.test.tsx`, `price-estimate-widget.test.tsx`, `review-step.test.tsx`, `sell-wizard.test.tsx` (интеграционный happy-path) — итого 132/132 теста проходят
+    - **Найдено и исправлено при живой проверке**: (1) `z.coerce.number()` в схеме ломал типизацию `Control<T>` между `zodResolver` и `useForm` — исправлено явным `as Resolver<VehicleDetailsInput>` с комментарием-объяснением; (2) `FormField` не имел `value={field.value ?? ''}` fallback — числовые поля стартовали `undefined` (uncontrolled) и становились controlled при вводе, React ругался — пофикшено на уровне `form-field.tsx` (затрагивает все формы); (3) `vehicle-details-step.tsx` дефолтил опциональное поле `color` в `''` вместо `undefined` — пустая строка не проходит `.optional()` в Zod (только `undefined` проходит), из-за чего форма не сабмитилась с «Invalid input» на пустом необязательном поле
+    - **Что осталось внутри FE-3**: тесты на сам `select-field.tsx` (сейчас покрыт только косвенно через степ-компоненты), реальная интеграция с Core API вместо моков (блокер — бэкенда ещё нет), возможно вынести `SellWizard`'ную кнопку «Назад» в общий компонент степ-навигации, если появятся другие wizard'ы
 
 ## В работе / следующий шаг
 
-Согласно frontend-plan.md §13 и §11 (Epic FE-2 → FE-3):
+Согласно frontend-plan.md §13 и §11:
 
-- **FE-2 (Auth UI) близок к завершению** — то, что ещё не сделано: таймер повторной отправки OTP на UI (если не реализован — проверить `otp-form.tsx`), блокировка после 3 неверных попыток на 15 мин (см. frontend-plan §9), JWT-сессия на клиенте (httpOnly refresh) — уточнить текущее покрытие перед тем, как считать эпик закрытым
-- **Дальше по критическому пути**: FE-3 (wizard размещения объявления — самый тяжёлый эпик, XL, 5–6 недель) — `PhotoUploadWizard`, `PriceEstimateWidget` (4 состояния Deal Rating)
+- **FE-3 в процессе** — каркас данных/UI/тестов готов и проверен вживую (см. п.12 выше); дальше — доп. UI-полировка (a11y для overlay блюра, возможно drag-корректировка вместо числовых полей) по мере необходимости, и интеграция с реальным Core API/ML-сервисами, когда бэкенд появится
 - **Не начато и блокирует другие эпики, если отложить**: i18n (next-intl, UZ/RU) — должно войти в инфраструктуру до первой "настоящей" страницы, не быть довеском в конце (FE-R-5, явный анти-паттерн-риск)
 - **Не поднято**: CI-гейты (bundlewatch, lighthouse-ci, axe, playwright) — планировались с первого PR каркаса, пока отложены
 
