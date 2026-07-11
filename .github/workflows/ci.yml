@@ -1,0 +1,40 @@
+# CI-гейты frontend'а (frontend-plan.md §13.6, откладывались с FE-1).
+# Тесты включают i18n-парность словарей (messages/parity.test.ts) и
+# a11y-смоук на axe (src/test/a11y.test.tsx). Build здесь безопасен:
+# в CI нет параллельного `next dev`, конфликт .next/ невозможен.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit & component tests
+        run: npm run test
+
+      - name: Production build
+        run: npm run build
