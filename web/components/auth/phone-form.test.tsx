@@ -10,7 +10,8 @@ const otp = vi.hoisted(() => ({
   mockSendOtp: vi.fn(),
 }));
 
-vi.mock('next/navigation', () => ({
+// Форма ходит через локале-осведомлённый роутер next-intl, не через next/navigation.
+vi.mock('@/i18n/navigation', () => ({
   useRouter: () => ({ push: nav.push }),
 }));
 

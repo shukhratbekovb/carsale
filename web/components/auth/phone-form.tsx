@@ -1,28 +1,34 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { useTranslations } from 'next-intl';
 import { z } from 'zod';
 import { FormField } from '@/components/forms/form-field';
 import { Button } from '@/components/ui/button';
-import { AUTH_LABELS } from '@/lib/labels';
+import { useRouter } from '@/i18n/navigation';
 import { mockSendOtp } from '@/lib/mock/otp';
-import { phoneSchema } from '@/lib/validation/auth';
+import { createPhoneSchema } from '@/lib/validation/auth';
 
-// phoneSchema валидирует «сырую» строку, а RHF/zodResolver ожидают объектную
-// схему формы — оборачиваем поле в объект, не меняя саму бизнес-схему.
-const phoneFormSchema = z.object({ phone: phoneSchema });
-type PhoneFormValues = z.infer<typeof phoneFormSchema>;
+type PhoneFormValues = { phone: string };
 
 interface PhoneFormProps {
   returnTo?: string;
 }
 
 export function PhoneForm({ returnTo }: PhoneFormProps) {
+  const t = useTranslations('auth');
+  const tValidation = useTranslations('validation');
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // phoneSchema валидирует «сырую» строку, а RHF/zodResolver ожидают объектную
+  // схему формы — оборачиваем поле в объект, не меняя саму бизнес-схему.
+  const phoneFormSchema = useMemo(
+    () => z.object({ phone: createPhoneSchema(tValidation) }),
+    [tValidation]
+  );
 
   const { control, handleSubmit } = useForm<PhoneFormValues>({
     resolver: zodResolver(phoneFormSchema),
@@ -47,14 +53,14 @@ export function PhoneForm({ returnTo }: PhoneFormProps) {
       <FormField
         name="phone"
         control={control}
-        label={AUTH_LABELS.phoneLabel}
-        placeholder={AUTH_LABELS.phonePlaceholder}
+        label={t('phoneLabel')}
+        placeholder={t('phonePlaceholder')}
         type="tel"
         autoComplete="tel"
         inputMode="tel"
       />
       <Button type="submit" disabled={isSubmitting} className="w-full">
-        {isSubmitting ? AUTH_LABELS.sendingCode : AUTH_LABELS.getCode}
+        {isSubmitting ? t('sendingCode') : t('getCode')}
       </Button>
     </form>
   );

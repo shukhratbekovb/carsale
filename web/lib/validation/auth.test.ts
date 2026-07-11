@@ -1,5 +1,20 @@
 import { describe, expect, test } from 'vitest';
-import { otpCodeSchema, phoneSchema } from './auth';
+import { createTranslator } from 'next-intl';
+import ruMessages from '@/messages/ru.json';
+import { createOtpCodeSchema, createPhoneSchema } from './auth';
+
+import type { ValidationTranslator } from './translator';
+
+// Схемы — фабрики, принимающие переводчик namespace'а validation; в тестах
+// собираем настоящий next-intl переводчик поверх RU-словаря без React-дерева.
+// Каст расширяет узко выведенные ключи конкретного словаря до string-сигнатуры.
+const t = createTranslator({
+  locale: 'ru',
+  messages: ruMessages,
+  namespace: 'validation',
+}) as unknown as ValidationTranslator;
+const phoneSchema = createPhoneSchema(t);
+const otpCodeSchema = createOtpCodeSchema(t);
 
 describe('phoneSchema', () => {
   test('accepts a valid Uzbekistan number', () => {

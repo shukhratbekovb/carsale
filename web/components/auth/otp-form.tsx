@@ -1,13 +1,14 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useReducer, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { useTranslations } from 'next-intl';
 import { z } from 'zod';
 import { FormField } from '@/components/forms/form-field';
 import { Button } from '@/components/ui/button';
+import { Link, useRouter } from '@/i18n/navigation';
 import {
   canResendOtp,
   createInitialOtpState,
@@ -17,14 +18,11 @@ import {
   startOtpRequest,
   submitOtpFailure,
 } from '@/lib/auth/otp-flow';
-import { AUTH_LABELS } from '@/lib/labels';
 import { mockSendOtp, mockVerifyOtp } from '@/lib/mock/otp';
-import { otpCodeSchema } from '@/lib/validation/auth';
+import { createOtpCodeSchema } from '@/lib/validation/auth';
 import type { OtpFlowState } from '@/types/auth';
 
-// otpCodeSchema валидирует «сырую» строку — оборачиваем в объект для RHF/zodResolver.
-const codeFormSchema = z.object({ code: otpCodeSchema });
-type CodeFormValues = z.infer<typeof codeFormSchema>;
+type CodeFormValues = { code: string };
 
 type OtpAction =
   | { type: 'START'; phone: string; now: number }
@@ -57,8 +55,10 @@ function formatCountdown(ms: number): string {
 }
 
 // Читает phone/return из query сама (страница /auth/otp оборачивает её в
-// Suspense — см. app/auth/otp/page.tsx, как это сделано для CatalogFilters).
+// Suspense — см. app/[locale]/auth/otp/page.tsx, как это сделано для CatalogFilters).
 export function OtpForm() {
+  const t = useTranslations('auth');
+  const tValidation = useTranslations('validation');
   const router = useRouter();
   const searchParams = useSearchParams();
   const phone = searchParams.get('phone');
@@ -70,6 +70,12 @@ export function OtpForm() {
   const [now, setNow] = useState(() => Date.now());
   const [isVerifying, setIsVerifying] = useState(false);
   const sentRef = useRef(false);
+
+  // otpCodeSchema валидирует «сырую» строку — оборачиваем в объект для RHF/zodResolver.
+  const codeFormSchema = useMemo(
+    () => z.object({ code: createOtpCodeSchema(tValidation) }),
+    [tValidation]
+  );
 
   const { control, handleSubmit, reset } = useForm<CodeFormValues>({
     resolver: zodResolver(codeFormSchema),
@@ -141,9 +147,11 @@ export function OtpForm() {
     const remainingMs = state.lockedUntil ? state.lockedUntil - now : 0;
     return (
       <div className="flex flex-col items-center gap-2 py-4 text-center">
-        <p className="text-sm font-medium text-destructive">{AUTH_LABELS.lockedTitle}</p>
+        <p className="text-sm font-medium text-destructive">{t('lockedTitle')}</p>
         <p className="text-2xl font-semibold tabular-nums">{formatCountdown(remainingMs)}</p>
-        <p className="text-sm text-muted-foreground">{AUTH_LABELS.lockedMessage(formatCountdown(remainingMs))}</p>
+        <p className="text-sm text-muted-foreground">
+          {t('lockedMessage', { time: formatCountdown(remainingMs) })}
+        </p>
       </div>
     );
   }
@@ -155,13 +163,13 @@ export function OtpForm() {
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm text-muted-foreground">{AUTH_LABELS.codeSentTo(phone)}</p>
+      <p className="text-sm text-muted-foreground">{t('codeSentTo', { phone })}</p>
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
         <FormField
           name="code"
           control={control}
-          label={AUTH_LABELS.codeLabel}
+          label={t('codeLabel')}
           placeholder="000000"
           inputMode="numeric"
           autoComplete="one-time-code"
@@ -169,26 +177,28 @@ export function OtpForm() {
         />
 
         {state.lastError === 'INVALID_CODE' && (
-          <p className="text-sm text-destructive">{AUTH_LABELS.invalidCode(state.attemptsRemaining)}</p>
+          <p className="text-sm text-destructive">
+            {t('invalidCode', { attemptsRemaining: state.attemptsRemaining })}
+          </p>
         )}
         {state.lastError === 'SMS_UNAVAILABLE' && (
-          <p className="text-sm text-destructive">{AUTH_LABELS.smsUnavailable}</p>
+          <p className="text-sm text-destructive">{t('smsUnavailable')}</p>
         )}
 
         <Button type="submit" disabled={isVerifying} className="w-full">
-          {isVerifying ? AUTH_LABELS.verifying : AUTH_LABELS.confirm}
+          {isVerifying ? t('verifying') : t('confirm')}
         </Button>
       </form>
 
       <Button type="button" variant="outline" disabled={!canResend} onClick={handleResend}>
-        {canResend ? AUTH_LABELS.resend : AUTH_LABELS.resendIn(resendSeconds)}
+        {canResend ? t('resend') : t('resendIn', { seconds: resendSeconds })}
       </Button>
 
       <Link
         href={returnTo ? `/auth/login?return=${encodeURIComponent(returnTo)}` : '/auth/login'}
         className="text-center text-sm text-muted-foreground underline-offset-4 hover:underline"
       >
-        {AUTH_LABELS.changePhone}
+        {t('changePhone')}
       </Link>
     </div>
   );

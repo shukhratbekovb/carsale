@@ -13,9 +13,19 @@ const otp = vi.hoisted(() => ({
   mockVerifyOtp: vi.fn(),
 }));
 
+// useSearchParams остаётся из next/navigation, а роутер и Link форма берёт из
+// локале-осведомлённого @/i18n/navigation — мокаем оба модуля по отдельности.
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: nav.push, replace: nav.replace }),
   useSearchParams: () => nav.searchParams,
+}));
+
+vi.mock('@/i18n/navigation', () => ({
+  useRouter: () => ({ push: nav.push, replace: nav.replace }),
+  Link: ({ href, children, ...props }: React.ComponentProps<'a'>) => (
+    <a href={typeof href === 'string' ? href : undefined} {...props}>
+      {children}
+    </a>
+  ),
 }));
 
 vi.mock('@/lib/mock/otp', () => ({
