@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
-import { SELL_LABELS } from '@/lib/labels';
 import { mockDetectBlurRegions } from '@/lib/mock/photo-blur';
-import { MAX_LISTING_PHOTOS, photosSchema } from '@/lib/validation/sell';
+import { createPhotosSchema, MAX_LISTING_PHOTOS } from '@/lib/validation/sell';
 import type { BlurRegion, PhotoDraft } from '@/types/sell';
 
 interface PhotoUploadStepProps {
@@ -38,8 +38,12 @@ export function PhotoUploadStep({
   onSetManualRegions,
   onComplete,
 }: PhotoUploadStepProps) {
+  const t = useTranslations('sell');
+  const tValidation = useTranslations('validation');
   const [formError, setFormError] = useState<string | undefined>();
   const [adjustingId, setAdjustingId] = useState<string | null>(null);
+
+  const photosSchema = useMemo(() => createPhotosSchema(tValidation), [tValidation]);
 
   // Отзываем object URL превью при удалении фото/размонтировании шага, чтобы не
   // утекать память — держим актуальный список в ref, т.к. cleanup читает его
@@ -96,7 +100,7 @@ export function PhotoUploadStep({
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm text-muted-foreground">{SELL_LABELS.photosHint(MAX_LISTING_PHOTOS)}</p>
+      <p className="text-sm text-muted-foreground">{t('photosHint', { max: MAX_LISTING_PHOTOS })}</p>
 
       <input
         type="file"
@@ -104,7 +108,7 @@ export function PhotoUploadStep({
         multiple
         disabled={photos.length >= MAX_LISTING_PHOTOS}
         onChange={handleFilesSelected}
-        aria-label={SELL_LABELS.addPhotos}
+        aria-label={t('addPhotos')}
       />
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
@@ -134,15 +138,15 @@ export function PhotoUploadStep({
 
               <p className="text-xs text-muted-foreground">
                 {photo.status === 'UPLOADING' || photo.status === 'BLUR_PENDING'
-                  ? SELL_LABELS.photoBlurPending
+                  ? t('photoBlurPending')
                   : photo.status === 'BLUR_DONE'
-                    ? SELL_LABELS.photoBlurDone
-                    : SELL_LABELS.photoBlurFailed}
+                    ? t('photoBlurDone')
+                    : t('photoBlurFailed')}
               </p>
 
               {photo.status === 'BLUR_FAILED' && (
                 <Button type="button" size="sm" variant="outline" onClick={() => handleRetryBlur(photo.id)}>
-                  {SELL_LABELS.photoBlurRetry}
+                  {t('photoBlurRetry')}
                 </Button>
               )}
 
@@ -154,12 +158,12 @@ export function PhotoUploadStep({
                     variant="outline"
                     onClick={() => setAdjustingId(adjustingId === photo.id ? null : photo.id)}
                   >
-                    {SELL_LABELS.photoAdjustBlur}
+                    {t('photoAdjustBlur')}
                   </Button>
                   {adjustingId === photo.id && (
                     <div className="grid grid-cols-2 gap-2">
                       <p className="col-span-2 text-xs text-muted-foreground">
-                        {SELL_LABELS.photoBlurRegionLabel(0)}
+                        {t('photoBlurRegionLabel', { index: 1 })}
                       </p>
                       <label className="text-xs">
                         X %
@@ -219,7 +223,7 @@ export function PhotoUploadStep({
               )}
 
               <Button type="button" size="sm" variant="ghost" onClick={() => handleRemove(photo.id)}>
-                {SELL_LABELS.photoRemove}
+                {t('photoRemove')}
               </Button>
             </div>
           );
@@ -229,7 +233,7 @@ export function PhotoUploadStep({
       {formError && <p className="text-sm text-destructive">{formError}</p>}
 
       <Button type="button" onClick={handleNext} className="self-end">
-        {SELL_LABELS.next}
+        {t('next')}
       </Button>
     </div>
   );

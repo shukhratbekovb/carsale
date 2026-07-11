@@ -1,13 +1,13 @@
 'use client';
 
 import { useReducer } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { PhotoUploadStep } from '@/components/sell/photo-upload-step';
 import { PriceEstimateWidget } from '@/components/sell/price-estimate-widget';
 import { ReviewStep } from '@/components/sell/review-step';
 import { VehicleDetailsStep } from '@/components/sell/vehicle-details-step';
 import { Button } from '@/components/ui/button';
-import { SELL_LABELS } from '@/lib/labels';
+import { useRouter } from '@/i18n/navigation';
 import type { PriceEstimateInput, PriceEstimateResult } from '@/lib/mock/price-estimate';
 import {
   addPhoto,
@@ -93,6 +93,7 @@ function wizardReducer(state: WizardFlowState, action: WizardAction): WizardFlow
 }
 
 function StepProgress({ current }: { current: WizardStep }) {
+  const t = useTranslations('sell');
   const currentIndex = WIZARD_STEPS.indexOf(current);
   return (
     <ol className="mb-6 flex items-center gap-2">
@@ -103,7 +104,7 @@ function StepProgress({ current }: { current: WizardStep }) {
             aria-hidden
           />
           <span className={`text-xs ${index === currentIndex ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
-            {SELL_LABELS.stepTitles[step]}
+            {t(`steps.${step}`)}
           </span>
         </li>
       ))}
@@ -112,16 +113,17 @@ function StepProgress({ current }: { current: WizardStep }) {
 }
 
 export function SellWizard() {
+  const t = useTranslations('sell');
   const router = useRouter();
   const [state, dispatch] = useReducer(wizardReducer, undefined, createInitialDraftState);
 
   if (state.submission.status === 'PENDING_MODERATION') {
     return (
       <div className="flex flex-col items-center gap-3 py-8 text-center">
-        <p className="text-lg font-semibold">{SELL_LABELS.submittedTitle}</p>
-        <p className="text-sm text-muted-foreground">{SELL_LABELS.submittedMessage}</p>
+        <p className="text-lg font-semibold">{t('submittedTitle')}</p>
+        <p className="text-sm text-muted-foreground">{t('submittedMessage')}</p>
         <Button type="button" onClick={() => router.push('/catalog')}>
-          {SELL_LABELS.backToCatalog}
+          {t('backToCatalog')}
         </Button>
       </div>
     );
@@ -174,7 +176,7 @@ export function SellWizard() {
 
       {state.step !== 'VEHICLE_DETAILS' && (
         <Button type="button" variant="ghost" onClick={() => dispatch({ type: 'PREV_STEP' })} className="self-start">
-          {SELL_LABELS.back}
+          {t('back')}
         </Button>
       )}
     </div>

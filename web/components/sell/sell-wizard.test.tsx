@@ -6,7 +6,8 @@ const nav = vi.hoisted(() => ({ push: vi.fn() }));
 const blur = vi.hoisted(() => ({ mockDetectBlurRegions: vi.fn() }));
 const price = vi.hoisted(() => ({ mockEstimatePrice: vi.fn() }));
 
-vi.mock('next/navigation', () => ({
+// Wizard ходит через локале-осведомлённый роутер next-intl, не через next/navigation.
+vi.mock('@/i18n/navigation', () => ({
   useRouter: () => ({ push: nav.push }),
 }));
 

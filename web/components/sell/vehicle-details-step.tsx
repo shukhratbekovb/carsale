@@ -1,25 +1,22 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useMemo } from 'react';
 import { useForm, type Resolver } from 'react-hook-form';
+import { useTranslations } from 'next-intl';
 import { FormField } from '@/components/forms/form-field';
 import { SelectField } from '@/components/forms/select-field';
 import { Button } from '@/components/ui/button';
 import { UZ_CITIES } from '@/lib/data/uz-cities';
+import { createVehicleDetailsSchema, type VehicleDetailsInput } from '@/lib/validation/sell';
 import {
-  CONDITION_LABELS,
-  DRIVE_TYPE_LABELS,
-  FUEL_TYPE_LABELS,
-  SELL_LABELS,
-  TRANSMISSION_LABELS,
-} from '@/lib/labels';
-import { vehicleDetailsSchema, type VehicleDetailsInput } from '@/lib/validation/sell';
+  CONDITION_VALUES,
+  DRIVE_TYPE_VALUES,
+  FUEL_TYPE_VALUES,
+  TRANSMISSION_VALUES,
+} from '@/types/listing';
 import type { VehicleDetailsDraft } from '@/types/sell';
 
-const CONDITION_OPTIONS = Object.entries(CONDITION_LABELS).map(([value, label]) => ({ value, label }));
-const TRANSMISSION_OPTIONS = Object.entries(TRANSMISSION_LABELS).map(([value, label]) => ({ value, label }));
-const DRIVE_TYPE_OPTIONS = Object.entries(DRIVE_TYPE_LABELS).map(([value, label]) => ({ value, label }));
-const FUEL_TYPE_OPTIONS = Object.entries(FUEL_TYPE_LABELS).map(([value, label]) => ({ value, label }));
 const CITY_OPTIONS = UZ_CITIES.map((city) => ({ value: city.name, label: city.name }));
 
 interface VehicleDetailsStepProps {
@@ -28,12 +25,35 @@ interface VehicleDetailsStepProps {
 }
 
 export function VehicleDetailsStep({ draft, onComplete }: VehicleDetailsStepProps) {
+  const t = useTranslations('sell');
+  const tListing = useTranslations('listing');
+  const tValidation = useTranslations('validation');
+
+  const schema = useMemo(() => createVehicleDetailsSchema(tValidation), [tValidation]);
+
+  const conditionOptions = CONDITION_VALUES.map((value) => ({
+    value,
+    label: tListing(`condition.${value}`),
+  }));
+  const transmissionOptions = TRANSMISSION_VALUES.map((value) => ({
+    value,
+    label: tListing(`transmission.${value}`),
+  }));
+  const driveTypeOptions = DRIVE_TYPE_VALUES.map((value) => ({
+    value,
+    label: tListing(`driveType.${value}`),
+  }));
+  const fuelTypeOptions = FUEL_TYPE_VALUES.map((value) => ({
+    value,
+    label: tListing(`fuelType.${value}`),
+  }));
+
   const { control, handleSubmit } = useForm<VehicleDetailsInput>({
     // z.coerce.number() fields (year/mileageKm/engineVolume/priceUzs) give the schema
     // a pre-parse input type of `unknown`, which makes zodResolver's inferred generic
     // diverge from the (already coerced) VehicleDetailsInput used for defaultValues/
     // Control below — cast to keep the form typed by the post-parse shape everywhere.
-    resolver: zodResolver(vehicleDetailsSchema) as Resolver<VehicleDetailsInput>,
+    resolver: zodResolver(schema) as Resolver<VehicleDetailsInput>,
     defaultValues: {
       make: draft.make ?? '',
       model: draft.model ?? '',
@@ -56,42 +76,42 @@ export function VehicleDetailsStep({ draft, onComplete }: VehicleDetailsStepProp
   return (
     <form onSubmit={handleSubmit(onComplete)} className="flex flex-col gap-4" noValidate>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <FormField name="make" control={control} label={SELL_LABELS.makeLabel} />
-        <FormField name="model" control={control} label={SELL_LABELS.modelLabel} />
-        <FormField name="year" control={control} label={SELL_LABELS.yearLabel} type="number" inputMode="numeric" />
+        <FormField name="make" control={control} label={t('makeLabel')} />
+        <FormField name="model" control={control} label={t('modelLabel')} />
+        <FormField name="year" control={control} label={t('yearLabel')} type="number" inputMode="numeric" />
         <FormField
           name="mileageKm"
           control={control}
-          label={SELL_LABELS.mileageLabel}
+          label={t('mileageLabel')}
           type="number"
           inputMode="numeric"
         />
         <SelectField
           name="condition"
           control={control}
-          label={SELL_LABELS.conditionLabel}
-          options={CONDITION_OPTIONS}
-          placeholder={SELL_LABELS.selectPlaceholder}
+          label={t('conditionLabel')}
+          options={conditionOptions}
+          placeholder={t('selectPlaceholder')}
         />
-        <FormField name="color" control={control} label={SELL_LABELS.colorLabel} />
+        <FormField name="color" control={control} label={t('colorLabel')} />
         <SelectField
           name="transmission"
           control={control}
-          label={SELL_LABELS.transmissionLabel}
-          options={TRANSMISSION_OPTIONS}
-          placeholder={SELL_LABELS.selectPlaceholder}
+          label={t('transmissionLabel')}
+          options={transmissionOptions}
+          placeholder={t('selectPlaceholder')}
         />
         <SelectField
           name="driveType"
           control={control}
-          label={SELL_LABELS.driveTypeLabel}
-          options={DRIVE_TYPE_OPTIONS}
-          placeholder={SELL_LABELS.selectPlaceholder}
+          label={t('driveTypeLabel')}
+          options={driveTypeOptions}
+          placeholder={t('selectPlaceholder')}
         />
         <FormField
           name="engineVolume"
           control={control}
-          label={SELL_LABELS.engineVolumeLabel}
+          label={t('engineVolumeLabel')}
           type="number"
           step="0.1"
           inputMode="decimal"
@@ -99,28 +119,28 @@ export function VehicleDetailsStep({ draft, onComplete }: VehicleDetailsStepProp
         <SelectField
           name="fuelType"
           control={control}
-          label={SELL_LABELS.fuelTypeLabel}
-          options={FUEL_TYPE_OPTIONS}
-          placeholder={SELL_LABELS.selectPlaceholder}
+          label={t('fuelTypeLabel')}
+          options={fuelTypeOptions}
+          placeholder={t('selectPlaceholder')}
         />
         <SelectField
           name="city"
           control={control}
-          label={SELL_LABELS.cityLabel}
+          label={t('cityLabel')}
           options={CITY_OPTIONS}
-          placeholder={SELL_LABELS.selectPlaceholder}
+          placeholder={t('selectPlaceholder')}
         />
         <FormField
           name="priceUzs"
           control={control}
-          label={SELL_LABELS.priceLabel}
+          label={t('priceLabel')}
           type="number"
           inputMode="numeric"
         />
       </div>
 
       <Button type="submit" className="self-end">
-        {SELL_LABELS.next}
+        {t('next')}
       </Button>
     </form>
   );

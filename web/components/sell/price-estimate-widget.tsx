@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { useTranslations } from 'next-intl';
 import { DealRatingBadge } from '@/components/domain/deal-rating-badge';
 import { Button } from '@/components/ui/button';
-import { SELL_LABELS } from '@/lib/labels';
 import { mockEstimatePrice, type PriceEstimateInput, type PriceEstimateResult } from '@/lib/mock/price-estimate';
 import type { PriceEstimateState } from '@/types/sell';
 
@@ -24,6 +24,8 @@ export function PriceEstimateWidget({
   onFailed,
   onComplete,
 }: PriceEstimateWidgetProps) {
+  const t = useTranslations('sell');
+
   // Автозапрос оценки при первом входе на шаг — характеристики авто уже известны
   // из предыдущего шага, ждать явного клика продавца незачем. requestedRef защищает
   // от повторного запроса из-за Strict Mode двойного рендера/повторных рендеров шага.
@@ -50,12 +52,14 @@ export function PriceEstimateWidget({
 
   return (
     <div className="flex flex-col gap-4">
-      {priceEstimate.status === 'IDLE' && <p className="text-sm text-muted-foreground">{SELL_LABELS.priceEstimateLoading}</p>}
+      {priceEstimate.status === 'IDLE' && (
+        <p className="text-sm text-muted-foreground">{t('priceEstimateLoading')}</p>
+      )}
 
       {priceEstimate.status === 'LOADING' && (
         <div className="flex items-center gap-2">
           <div className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
-          <p className="text-sm text-muted-foreground">{SELL_LABELS.priceEstimateLoading}</p>
+          <p className="text-sm text-muted-foreground">{t('priceEstimateLoading')}</p>
         </div>
       )}
 
@@ -64,7 +68,10 @@ export function PriceEstimateWidget({
           <DealRatingBadge label={priceEstimate.label} />
           {priceEstimate.recommendedMin != null && priceEstimate.recommendedMax != null && (
             <p className="text-sm text-muted-foreground">
-              {SELL_LABELS.priceEstimateRecommended(priceEstimate.recommendedMin, priceEstimate.recommendedMax)}
+              {t('priceEstimateRecommended', {
+                min: priceEstimate.recommendedMin,
+                max: priceEstimate.recommendedMax,
+              })}
             </p>
           )}
         </div>
@@ -72,9 +79,9 @@ export function PriceEstimateWidget({
 
       {priceEstimate.status === 'FAILED' && (
         <div className="flex flex-col gap-2">
-          <p className="text-sm text-destructive">{SELL_LABELS.priceEstimateFailed}</p>
+          <p className="text-sm text-destructive">{t('priceEstimateFailed')}</p>
           <Button type="button" variant="outline" onClick={handleRetry} className="self-start">
-            {SELL_LABELS.priceEstimateRetry}
+            {t('priceEstimateRetry')}
           </Button>
         </div>
       )}
@@ -85,7 +92,7 @@ export function PriceEstimateWidget({
         disabled={priceEstimate.status === 'LOADING'}
         className="self-end"
       >
-        {SELL_LABELS.next}
+        {t('next')}
       </Button>
     </div>
   );

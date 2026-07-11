@@ -1,5 +1,25 @@
 import { describe, expect, test } from 'vitest';
-import { MAX_DESCRIPTION_LENGTH, MAX_LISTING_PHOTOS, photosSchema, reviewSchema, vehicleDetailsSchema } from './sell';
+import { createTranslator } from 'next-intl';
+import ruMessages from '@/messages/ru.json';
+import {
+  createPhotosSchema,
+  createReviewSchema,
+  createVehicleDetailsSchema,
+  MAX_DESCRIPTION_LENGTH,
+  MAX_LISTING_PHOTOS,
+} from './sell';
+import type { ValidationTranslator } from './translator';
+
+// Схемы — фабрики с переводчиком namespace'а validation (как в auth.test.ts);
+// каст расширяет узко выведенные ключи конкретного словаря до string-сигнатуры.
+const t = createTranslator({
+  locale: 'ru',
+  messages: ruMessages,
+  namespace: 'validation',
+}) as unknown as ValidationTranslator;
+const vehicleDetailsSchema = createVehicleDetailsSchema(t);
+const reviewSchema = createReviewSchema(t);
+const photosSchema = createPhotosSchema(t);
 
 const CURRENT_YEAR = new Date().getFullYear();
 
