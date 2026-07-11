@@ -2,12 +2,14 @@
 
 import { useId, useMemo, useState } from 'react';
 import { Loader2, MapPin, Navigation } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { DEFAULT_CITY, UZ_CITIES } from '@/lib/data/uz-cities';
 import { findNearestCity } from '@/lib/geo';
 import { cn } from '@/lib/utils';
 
 export function LocationPicker() {
+  const t = useTranslations('locationPicker');
   const [city, setCity] = useLocalStorage('carsale:city', DEFAULT_CITY);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -29,7 +31,7 @@ export function LocationPicker() {
 
   function detectLocation() {
     if (!navigator.geolocation) {
-      setError('Геолокация не поддерживается браузером');
+      setError(t('geoUnsupported'));
       return;
     }
     setDetecting(true);
@@ -40,7 +42,7 @@ export function LocationPicker() {
         setDetecting(false);
       },
       () => {
-        setError('Не удалось определить местоположение — проверьте разрешение браузера');
+        setError(t('geoFailed'));
         setDetecting(false);
       },
       { timeout: 8000 }
@@ -68,7 +70,7 @@ export function LocationPicker() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Город, область"
+            placeholder={t('searchPlaceholder')}
             className="mb-3 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
           <button
@@ -82,7 +84,7 @@ export function LocationPicker() {
             ) : (
               <Navigation className="h-4 w-4" aria-hidden="true" />
             )}
-            Определить автоматически
+            {t('detect')}
           </button>
           {error && <p className="mb-2 text-xs text-destructive">{error}</p>}
           <div className="flex flex-wrap gap-2">

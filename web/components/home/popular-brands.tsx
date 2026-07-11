@@ -1,4 +1,5 @@
-import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/navigation';
 
 // Марки, реально доминирующие на рынке UZ (UzAuto Motors/Chevrolet + основные импортные).
 // Инициалы вместо логотипов — реальных лицензированных логотипов брендов нет.
@@ -18,15 +19,17 @@ const POPULAR_BRANDS = [
 ];
 
 export function PopularBrands() {
+  const t = useTranslations('home');
+
   return (
     <section className="mt-10">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-xl font-bold">Популярные марки</h2>
+        <h2 className="text-xl font-bold">{t('popularBrands')}</h2>
         <Link
           href="/catalog"
           className="text-sm font-medium text-muted-foreground hover:text-foreground"
         >
-          Все объявления →
+          {t('allListings')}
         </Link>
       </div>
       <div className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3 lg:grid-cols-4">
