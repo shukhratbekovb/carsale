@@ -1,4 +1,4 @@
-import { DEAL_RATING_LABELS } from '@/lib/labels';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import type { DealRatingLabel } from '@/types/listing';
 
@@ -9,7 +9,10 @@ const STYLES: Record<DealRatingLabel, string> = {
   UNAVAILABLE: 'bg-muted text-muted-foreground',
 };
 
+// PRD §5.3: цветовой индикатор + текстовая метка, без голой иконки без пояснения.
 export function DealRatingBadge({ label }: { label: DealRatingLabel }) {
+  const t = useTranslations('listing');
+
   return (
     <span
       className={cn(
@@ -17,7 +20,7 @@ export function DealRatingBadge({ label }: { label: DealRatingLabel }) {
         STYLES[label]
       )}
     >
-      {DEAL_RATING_LABELS[label]}
+      {t(`dealRating.${label}`)}
     </span>
   );
 }

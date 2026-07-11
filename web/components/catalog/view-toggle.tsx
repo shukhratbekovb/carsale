@@ -1,10 +1,13 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { LayoutGrid, List } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useRouter } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 
 export function ViewToggle() {
+  const t = useTranslations('catalog');
   const router = useRouter();
   const searchParams = useSearchParams();
   const view = searchParams.get('view') === 'list' ? 'list' : 'grid';
@@ -23,7 +26,7 @@ export function ViewToggle() {
     <div className="inline-flex items-center rounded-md border p-0.5">
       <button
         type="button"
-        aria-label="Вид: галерея"
+        aria-label={t('viewGrid')}
         aria-pressed={view === 'grid'}
         onClick={() => setView('grid')}
         className={cn(
@@ -35,7 +38,7 @@ export function ViewToggle() {
       </button>
       <button
         type="button"
-        aria-label="Вид: список"
+        aria-label={t('viewList')}
         aria-pressed={view === 'list'}
         onClick={() => setView('list')}
         className={cn(

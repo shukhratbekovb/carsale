@@ -9,6 +9,14 @@ export default defineConfig({
     globals: true,
     css: true,
     setupFiles: ['./src/test/setup.ts'],
+    server: {
+      deps: {
+        // ESM-сборка next-intl импортирует 'next/navigation' без расширения;
+        // вне vite-пайплайна Node не резолвит этот сабпат — прогоняем пакет
+        // через vite, заодно vi.mock('next/navigation') работает и внутри него.
+        inline: ['next-intl', 'use-intl'],
+      },
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],

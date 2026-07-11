@@ -40,5 +40,6 @@ test('links to the listing detail page', () => {
   const links = screen.getAllByRole('link', {
     name: new RegExp(`${flaggedListing.make} ${flaggedListing.model}`),
   });
-  expect(links[0]).toHaveAttribute('href', `/catalog/${flaggedListing.id}`);
+  // Тестовый провайдер даёт locale="ru" (не дефолтная) — i18n-Link добавляет префикс.
+  expect(links[0]).toHaveAttribute('href', `/ru/catalog/${flaggedListing.id}`);
 });

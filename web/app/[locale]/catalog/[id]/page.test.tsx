@@ -8,7 +8,7 @@ import { mockListings } from '@/lib/mock/listings';
 const flaggedListing = mockListings.find((listing) => listing.id === '4')!;
 
 test('renders make/model/year, formatted price, deal rating and mileage flag synchronously', () => {
-  render(<ListingPage params={{ id: flaggedListing.id }} />);
+  render(<ListingPage params={{ id: flaggedListing.id, locale: 'ru' }} />);
 
   expect(
     screen.getByRole('heading', {
@@ -26,7 +26,7 @@ test('renders make/model/year, formatted price, deal rating and mileage flag syn
 test('throws Next.js not-found for an unknown listing id', () => {
   let thrown: unknown;
   try {
-    render(<ListingPage params={{ id: 'does-not-exist' }} />);
+    render(<ListingPage params={{ id: 'does-not-exist', locale: 'ru' }} />);
   } catch (error) {
     thrown = error;
   }

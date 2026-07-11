@@ -1,14 +1,17 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { useRouter } from '@/i18n/navigation';
 
-const SORT_OPTIONS: Array<{ value: string; label: string }> = [
-  { value: 'date', label: 'Сначала новые' },
-  { value: 'price', label: 'Сначала дешёвые' },
-  { value: 'dealRating', label: 'Сначала выгодные' },
-];
+const SORT_OPTIONS = [
+  { value: 'date', labelKey: 'sortDate' },
+  { value: 'price', labelKey: 'sortPrice' },
+  { value: 'dealRating', labelKey: 'sortDealRating' },
+] as const;
 
 export function SortSelect() {
+  const t = useTranslations('catalog');
   const router = useRouter();
   const searchParams = useSearchParams();
   const sort = searchParams.get('sort') ?? 'date';
@@ -27,12 +30,12 @@ export function SortSelect() {
     <select
       value={sort}
       onChange={(e) => onChange(e.target.value)}
-      aria-label="Сортировка"
+      aria-label={t('sortLabel')}
       className="h-10 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       {SORT_OPTIONS.map((opt) => (
         <option key={opt.value} value={opt.value}>
-          {opt.label}
+          {t(opt.labelKey)}
         </option>
       ))}
     </select>

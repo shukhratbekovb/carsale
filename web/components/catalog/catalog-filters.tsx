@@ -1,10 +1,12 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { type ReactNode, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/input';
-import { DEAL_RATING_LABELS, DRIVE_TYPE_LABELS, TRANSMISSION_LABELS } from '@/lib/labels';
+import { useRouter } from '@/i18n/navigation';
 import { mockListings } from '@/lib/mock/listings';
+import { DEAL_RATING_VALUES, DRIVE_TYPE_VALUES, TRANSMISSION_VALUES } from '@/types/listing';
 
 const MAKES = Array.from(new Set(mockListings.map((l) => l.make))).sort();
 const CITIES = Array.from(new Set(mockListings.map((l) => l.city))).sort();
@@ -24,6 +26,8 @@ function Field({ label, htmlFor, children }: { label: string; htmlFor?: string; 
 }
 
 export function CatalogFilters() {
+  const t = useTranslations('catalog.filters');
+  const tListing = useTranslations('listing');
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -90,7 +94,7 @@ export function CatalogFilters() {
   return (
     <form onSubmit={apply} className="rounded-lg border p-4">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-        <Field label="Марка" htmlFor="filter-make">
+        <Field label={t('make')} htmlFor="filter-make">
           <select
             id="filter-make"
             value={make}
@@ -100,7 +104,7 @@ export function CatalogFilters() {
             }}
             className={selectClassName}
           >
-            <option value="">Любая</option>
+            <option value="">{t('anyFeminine')}</option>
             {MAKES.map((m) => (
               <option key={m} value={m}>
                 {m}
@@ -109,14 +113,14 @@ export function CatalogFilters() {
           </select>
         </Field>
 
-        <Field label="Модель" htmlFor="filter-model">
+        <Field label={t('model')} htmlFor="filter-model">
           <select
             id="filter-model"
             value={model}
             onChange={(e) => setModel(e.target.value)}
             className={selectClassName}
           >
-            <option value="">Любая</option>
+            <option value="">{t('anyFeminine')}</option>
             {models.map((m) => (
               <option key={m} value={m}>
                 {m}
@@ -125,125 +129,125 @@ export function CatalogFilters() {
           </select>
         </Field>
 
-        <Field label="Год от">
+        <Field label={t('yearFrom')}>
           <Input
             type="number"
             inputMode="numeric"
-            aria-label="Год от"
-            placeholder="от"
+            aria-label={t('yearFrom')}
+            placeholder={t('from')}
             value={yearMin}
             onChange={(e) => setYearMin(e.target.value)}
           />
         </Field>
-        <Field label="Год до">
+        <Field label={t('yearTo')}>
           <Input
             type="number"
             inputMode="numeric"
-            aria-label="Год до"
-            placeholder="до"
+            aria-label={t('yearTo')}
+            placeholder={t('to')}
             value={yearMax}
             onChange={(e) => setYearMax(e.target.value)}
           />
         </Field>
 
-        <Field label="Цена от, сум">
+        <Field label={t('priceFrom')}>
           <Input
             type="number"
             inputMode="numeric"
-            aria-label="Цена от"
-            placeholder="от"
+            aria-label={t('priceFrom')}
+            placeholder={t('from')}
             value={priceMin}
             onChange={(e) => setPriceMin(e.target.value)}
           />
         </Field>
-        <Field label="Цена до, сум">
+        <Field label={t('priceTo')}>
           <Input
             type="number"
             inputMode="numeric"
-            aria-label="Цена до"
-            placeholder="до"
+            aria-label={t('priceTo')}
+            placeholder={t('to')}
             value={priceMax}
             onChange={(e) => setPriceMax(e.target.value)}
           />
         </Field>
 
-        <Field label="Пробег от, км">
+        <Field label={t('mileageFrom')}>
           <Input
             type="number"
             inputMode="numeric"
-            aria-label="Пробег от"
-            placeholder="от"
+            aria-label={t('mileageFrom')}
+            placeholder={t('from')}
             value={mileageMin}
             onChange={(e) => setMileageMin(e.target.value)}
           />
         </Field>
-        <Field label="Пробег до, км">
+        <Field label={t('mileageTo')}>
           <Input
             type="number"
             inputMode="numeric"
-            aria-label="Пробег до"
-            placeholder="до"
+            aria-label={t('mileageTo')}
+            placeholder={t('to')}
             value={mileageMax}
             onChange={(e) => setMileageMax(e.target.value)}
           />
         </Field>
 
-        <Field label="КПП" htmlFor="filter-transmission">
+        <Field label={t('transmission')} htmlFor="filter-transmission">
           <select
             id="filter-transmission"
             value={transmission}
             onChange={(e) => setTransmission(e.target.value)}
             className={selectClassName}
           >
-            <option value="">Любая</option>
-            {Object.entries(TRANSMISSION_LABELS).map(([value, label]) => (
+            <option value="">{t('anyFeminine')}</option>
+            {TRANSMISSION_VALUES.map((value) => (
               <option key={value} value={value}>
-                {label}
+                {tListing(`transmission.${value}`)}
               </option>
             ))}
           </select>
         </Field>
 
-        <Field label="Привод" htmlFor="filter-drive-type">
+        <Field label={t('driveType')} htmlFor="filter-drive-type">
           <select
             id="filter-drive-type"
             value={driveType}
             onChange={(e) => setDriveType(e.target.value)}
             className={selectClassName}
           >
-            <option value="">Любой</option>
-            {Object.entries(DRIVE_TYPE_LABELS).map(([value, label]) => (
+            <option value="">{t('anyMasculine')}</option>
+            {DRIVE_TYPE_VALUES.map((value) => (
               <option key={value} value={value}>
-                {label}
+                {tListing(`driveType.${value}`)}
               </option>
             ))}
           </select>
         </Field>
 
-        <Field label="Deal Rating" htmlFor="filter-deal-rating">
+        <Field label={t('dealRating')} htmlFor="filter-deal-rating">
           <select
             id="filter-deal-rating"
             value={dealRating}
             onChange={(e) => setDealRating(e.target.value)}
             className={selectClassName}
           >
-            <option value="">Любой</option>
-            {Object.entries(DEAL_RATING_LABELS).map(([value, label]) => (
+            <option value="">{t('anyMasculine')}</option>
+            {DEAL_RATING_VALUES.map((value) => (
               <option key={value} value={value}>
-                {label}
+                {tListing(`dealRating.${value}`)}
               </option>
             ))}
           </select>
         </Field>
 
-        <Field label="Город" htmlFor="filter-city">
+        <Field label={t('city')} htmlFor="filter-city">
           <select
             id="filter-city"
             value={city}
             onChange={(e) => setCity(e.target.value)}
             className={selectClassName}
           >
-            <option value="">Любой</option>
+            <option value="">{t('anyMasculine')}</option>
             {CITIES.map((c) => (
               <option key={c} value={c}>
                 {c}
@@ -261,7 +265,7 @@ export function CatalogFilters() {
             onChange={(e) => setVerifiedOnly(e.target.checked)}
             className="h-4 w-4 rounded border-input"
           />
-          Только проверенные продавцы
+          {t('verifiedOnly')}
         </label>
 
         <div className="flex gap-2">
@@ -270,13 +274,13 @@ export function CatalogFilters() {
             onClick={reset}
             className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-accent"
           >
-            Сбросить
+            {t('reset')}
           </button>
           <button
             type="submit"
             className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
           >
-            Применить
+            {t('apply')}
           </button>
         </div>
       </div>

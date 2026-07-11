@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { useTranslations } from 'next-intl';
 import { CatalogFilters } from '@/components/catalog/catalog-filters';
 import { SortSelect } from '@/components/catalog/sort-select';
 import { ViewToggle } from '@/components/catalog/view-toggle';
@@ -44,6 +45,7 @@ function ListingsCollection({ listings, view }: { listings: Listing[]; view: Vie
 
 // SSR обязателен (не CSR-only) — гостевой SEO-маршрут, см. frontend-plan.md §5.
 export default function CatalogPage({ searchParams }: CatalogPageProps) {
+  const t = useTranslations('catalog');
   const { filters, sort } = parseCatalogSearchParams(searchParams);
   const view: View = firstValue(searchParams.view) === 'list' ? 'list' : 'grid';
   const results = sortListings(filterListings(mockListings, filters), sort);
@@ -51,14 +53,14 @@ export default function CatalogPage({ searchParams }: CatalogPageProps) {
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8">
-      <h1 className="mb-6 text-2xl font-bold">Каталог объявлений</h1>
+      <h1 className="mb-6 text-2xl font-bold">{t('title')}</h1>
 
       <Suspense fallback={<div className="h-40 rounded-lg border" />}>
         <CatalogFilters />
       </Suspense>
 
       <div className="mb-4 mt-6 flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">{results.length} объявлений</p>
+        <p className="text-sm text-muted-foreground">{t('count', { count: results.length })}</p>
         <div className="flex items-center gap-2">
           <Suspense fallback={null}>
             <SortSelect />
@@ -74,7 +76,7 @@ export default function CatalogPage({ searchParams }: CatalogPageProps) {
       ) : (
         <div>
           <p className="mb-4 rounded-md border border-dashed p-4 text-sm text-muted-foreground">
-            По вашему запросу ничего не найдено. Показываем похожие объявления.
+            {t('noResults')}
           </p>
           <ListingsCollection listings={similar} view={view} />
         </div>

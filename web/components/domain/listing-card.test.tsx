@@ -39,5 +39,6 @@ test('omits the mileage flag when the listing has no flag', () => {
 test('links to the listing detail page', () => {
   render(<ListingCard listing={flaggedListing} />);
   const links = screen.getAllByRole('link');
-  expect(links[0]).toHaveAttribute('href', `/catalog/${flaggedListing.id}`);
+  // Тестовый провайдер даёт locale="ru" (не дефолтная) — i18n-Link добавляет префикс.
+  expect(links[0]).toHaveAttribute('href', `/ru/catalog/${flaggedListing.id}`);
 });

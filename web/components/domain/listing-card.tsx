@@ -1,8 +1,9 @@
-import Link from 'next/link';
+import { useLocale } from 'next-intl';
 import { DealRatingBadge } from '@/components/domain/deal-rating-badge';
 import { ListingPhotoPlaceholder } from '@/components/domain/listing-photo-placeholder';
 import { MileageFlag } from '@/components/domain/mileage-flag';
 import { VerifiedBadge } from '@/components/domain/verified-badge';
+import { Link } from '@/i18n/navigation';
 import { formatMileage, formatUzs } from '@/lib/format';
 import type { Listing } from '@/types/listing';
 
@@ -12,6 +13,8 @@ import type { Listing } from '@/types/listing';
 // Бейджи с MileageFlag (интерактивная кнопка) намеренно вынесены за пределы
 // <Link>, чтобы не вкладывать интерактивный элемент внутрь <a> (невалидный HTML).
 export function ListingCard({ listing }: { listing: Listing }) {
+  const locale = useLocale();
+
   return (
     <article className="overflow-hidden rounded-lg border bg-card text-card-foreground shadow-sm">
       <Link href={`/catalog/${listing.id}`} className="block">
@@ -23,9 +26,9 @@ export function ListingCard({ listing }: { listing: Listing }) {
             </h3>
             {listing.sellerVerified && <VerifiedBadge />}
           </div>
-          <p className="text-lg font-bold">{formatUzs(listing.priceUzs)}</p>
+          <p className="text-lg font-bold">{formatUzs(listing.priceUzs, locale)}</p>
           <p className="text-sm text-muted-foreground">
-            {formatMileage(listing.mileageKm)} · {listing.city}
+            {formatMileage(listing.mileageKm, locale)} · {listing.city}
           </p>
         </div>
       </Link>
