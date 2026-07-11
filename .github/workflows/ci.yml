@@ -24,6 +24,12 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
 
+      # package-lock.json сгенерирован npm 11 (локальная среда команды);
+      # npm 10 из коробки node 22 считает его рассинхронизированным из-за
+      # optional peer @swc/helpers — выравниваем мажор npm с локальным.
+      - name: Use npm 11 (lockfile generator version)
+        run: npm install -g npm@^11
+
       - name: Install dependencies
         run: npm ci
 
