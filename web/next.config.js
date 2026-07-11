@@ -1,3 +1,8 @@
+const createNextIntlPlugin = require('next-intl/plugin');
+
+// Плагин связывает серверный i18n-конфиг (локаль/словари) с RSC-рендером.
+const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
@@ -9,4 +14,4 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+module.exports = withNextIntl(nextConfig);

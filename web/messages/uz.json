@@ -1,0 +1,222 @@
+{
+  "meta": {
+    "description": "Oʻzbekistondagi ishonchli avtomobil oldi-sotdi marketpleysi"
+  },
+  "nav": {
+    "catalog": "Katalog",
+    "favorites": "Saralanganlar",
+    "myListings": "Mening eʼlonlarim",
+    "sell": "Avto sotish",
+    "login": "Kirish"
+  },
+  "languageSwitcher": {
+    "label": "Til"
+  },
+  "footer": {
+    "privacy": "Maxfiylik siyosati",
+    "terms": "Foydalanuvchi shartnomasi"
+  },
+  "locationPicker": {
+    "searchPlaceholder": "Shahar, viloyat",
+    "detect": "Avtomatik aniqlash",
+    "geoUnsupported": "Brauzer geolokatsiyani qoʻllab-quvvatlamaydi",
+    "geoFailed": "Joylashuvni aniqlab boʻlmadi — brauzer ruxsatini tekshiring"
+  },
+  "home": {
+    "title": "Ishonsa boʻladigan avtomobillar",
+    "statsCount": "{count, number} ta eʼlon",
+    "statsSuffix": "· 100% eʼlonlarda AI Deal Rating bahosi",
+    "searchPlaceholder": "Chevrolet Cobalt qidirish",
+    "searchLabel": "Eʼlonlar boʻyicha qidiruv",
+    "searchSubmit": "Qidirish",
+    "apply": "Qoʻllash",
+    "freshListings": "Yangi eʼlonlar",
+    "viewAll": "Barchasini koʻrish →",
+    "popularBrands": "Ommabop markalar",
+    "allListings": "Barcha eʼlonlar →",
+    "chips": {
+      "make": "Marka",
+      "model": "Model",
+      "year": "Yil",
+      "transmission": "Uzatmalar qutisi",
+      "mileage": "Probeg",
+      "price": "Narx"
+    }
+  },
+  "catalog": {
+    "title": "Eʼlonlar katalogi",
+    "count": "{count, number} ta eʼlon",
+    "noResults": "Soʻrovingiz boʻyicha hech narsa topilmadi. Oʻxshash eʼlonlarni koʻrsatyapmiz.",
+    "sortLabel": "Saralash",
+    "sortDate": "Avval yangilari",
+    "sortPrice": "Avval arzonlari",
+    "sortDealRating": "Avval foydalilari",
+    "viewGrid": "Koʻrinish: galereya",
+    "viewList": "Koʻrinish: roʻyxat",
+    "filters": {
+      "make": "Marka",
+      "model": "Model",
+      "yearFrom": "Yil (dan)",
+      "yearTo": "Yil (gacha)",
+      "priceFrom": "Narx (dan), soʻm",
+      "priceTo": "Narx (gacha), soʻm",
+      "mileageFrom": "Probeg (dan), km",
+      "mileageTo": "Probeg (gacha), km",
+      "transmission": "Uzatmalar qutisi",
+      "driveType": "Privod",
+      "dealRating": "Deal Rating",
+      "city": "Shahar",
+      "anyFeminine": "Istalgan",
+      "anyMasculine": "Istalgan",
+      "from": "dan",
+      "to": "gacha",
+      "verifiedOnly": "Faqat tasdiqlangan sotuvchilar",
+      "reset": "Tozalash",
+      "apply": "Qoʻllash"
+    }
+  },
+  "listing": {
+    "transmission": {
+      "AUTOMATIC": "Avtomat",
+      "MANUAL": "Mexanika",
+      "CVT": "Variator",
+      "ROBOT": "Robot"
+    },
+    "driveType": {
+      "FWD": "Old",
+      "RWD": "Orqa",
+      "AWD": "Toʻliq (AWD)",
+      "4WD": "Toʻliq (4WD)"
+    },
+    "dealRating": {
+      "GREAT_DEAL": "Ajoyib narx",
+      "FAIR_PRICE": "Adolatli narx",
+      "OVERPRICED": "Oshirib yuborilgan narx",
+      "UNAVAILABLE": "Baho mavjud emas"
+    },
+    "condition": {
+      "NEW": "Yangi",
+      "GOOD": "Yaxshi",
+      "FAIR": "Oʻrtacha",
+      "POOR": "Yomon"
+    },
+    "fuelType": {
+      "PETROL": "Benzin",
+      "DIESEL": "Dizel",
+      "GAS": "Gaz",
+      "ELECTRIC": "Elektr",
+      "HYBRID": "Gibrid"
+    },
+    "verified": "Tasdiqlangan",
+    "mileageFlag": "Probeg tekshiruvni talab qiladi",
+    "mileageFlagReason": "Koʻrsatilgan probeg ishlab chiqarilgan yil uchun kutilgan qiymatga mos kelmaydi.",
+    "photoUnavailable": "Eʼlon surati mavjud emas"
+  },
+  "listingPage": {
+    "backToCatalog": "← Katalogga qaytish",
+    "descriptionTitle": "Tavsif",
+    "specsTitle": "Xususiyatlar",
+    "specs": {
+      "year": "Ishlab chiqarilgan yil",
+      "mileage": "Probeg",
+      "transmission": "Uzatmalar qutisi",
+      "driveType": "Privod",
+      "condition": "Holati",
+      "city": "Shahar",
+      "color": "Rangi",
+      "engineVolume": "Dvigatel hajmi",
+      "fuel": "Yoqilgʻi"
+    },
+    "engineVolumeValue": "{value} l",
+    "contactHint": "Telefon raqamingizni oshkor qilmasdan sotuvchi bilan bogʻlaning.",
+    "loginToChat": "Yozish uchun tizimga kiring",
+    "metaDescription": "{make} {model}, {year}-yil, {mileage}, {city}."
+  },
+  "auth": {
+    "loginTitle": "Kirish",
+    "otpTitle": "Kodni tasdiqlash",
+    "phoneLabel": "Telefon raqami",
+    "phonePlaceholder": "+998901234567",
+    "getCode": "Kod olish",
+    "sendingCode": "Yuborilmoqda...",
+    "codeLabel": "SMS-kod",
+    "codeSentTo": "Kod {phone} raqamiga yuborildi",
+    "confirm": "Tasdiqlash",
+    "verifying": "Tekshirilmoqda...",
+    "resend": "Qayta yuborish",
+    "resendIn": "{seconds} soniyadan soʻng qayta yuborish",
+    "changePhone": "Raqamni oʻzgartirish",
+    "invalidCode": "Kod notoʻgʻri. Qolgan urinishlar: {attemptsRemaining}",
+    "smsUnavailable": "SMS yuborib boʻlmadi, keyinroq urinib koʻring",
+    "lockedTitle": "Urinishlar juda koʻp",
+    "lockedMessage": "{time} dan soʻng qayta urinib koʻring"
+  },
+  "sell": {
+    "pageTitle": "Eʼlon joylashtirish",
+    "steps": {
+      "VEHICLE_DETAILS": "Xususiyatlar",
+      "PHOTOS": "Suratlar",
+      "PRICE": "Narx bahosi",
+      "REVIEW": "Tekshirish va eʼlon qilish"
+    },
+    "back": "Orqaga",
+    "next": "Keyingi",
+    "submit": "Eʼlon qilish",
+    "submitting": "Yuborilmoqda...",
+    "makeLabel": "Marka",
+    "modelLabel": "Model",
+    "yearLabel": "Ishlab chiqarilgan yil",
+    "mileageLabel": "Probeg, km",
+    "conditionLabel": "Holati",
+    "colorLabel": "Rangi",
+    "transmissionLabel": "Uzatmalar qutisi",
+    "driveTypeLabel": "Privod",
+    "engineVolumeLabel": "Dvigatel hajmi, l",
+    "fuelTypeLabel": "Yoqilgʻi turi",
+    "cityLabel": "Shahar",
+    "priceLabel": "Narx, UZS",
+    "selectPlaceholder": "Tanlang",
+    "photosHint": "Koʻpi bilan {max} ta surat. Davlat raqami va VIN avtomatik xiralashtiriladi.",
+    "addPhotos": "Surat qoʻshish",
+    "photoRemove": "Oʻchirish",
+    "photoBlurPending": "Raqam va VIN aniqlanmoqda...",
+    "photoBlurDone": "Raqam va VIN xiralashtirildi",
+    "photoBlurFailed": "Xiralashtirish maydonini aniqlab boʻlmadi",
+    "photoBlurRetry": "Qayta urinish",
+    "photoAdjustBlur": "Xiralashtirish maydonini toʻgʻrilash",
+    "photoBlurRegionLabel": "{index}-maydon (X, Y, kenglik, balandlik — surat %ida)",
+    "descriptionLabel": "Tavsif",
+    "descriptionPlaceholder": "Avtomobil haqida yozing: jihozlanishi, xizmat koʻrsatish tarixi, holati...",
+    "priceEstimateLoading": "Adolatli narxni baholayapmiz...",
+    "priceEstimateFailed": "Narx bahosini olib boʻlmadi",
+    "priceEstimateRetry": "Qayta urinish",
+    "priceEstimateRecommended": "Tavsiya etilgan oraliq: {min, number} – {max, number} UZS",
+    "reviewVehicleTitle": "Xususiyatlar",
+    "reviewPhotosTitle": "Suratlar ({count})",
+    "reviewPriceTitle": "Narx bahosi",
+    "reviewEdit": "Oʻzgartirish",
+    "reviewMileage": "{value, number} km",
+    "reviewPrice": "{value, number} UZS",
+    "submittedTitle": "Eʼlon moderatsiyaga yuborildi",
+    "submittedMessage": "Tekshiruv odatda 30 daqiqadan oshmaydi. Eʼlon chop etilgach, sizni xabardor qilamiz.",
+    "backToCatalog": "Katalogga"
+  },
+  "validation": {
+    "phoneFormat": "Raqamni +998901234567 formatida kiriting",
+    "otpCode": "{length} xonali kodni kiriting",
+    "makeRequired": "Markani kiriting",
+    "modelRequired": "Modelni kiriting",
+    "yearInt": "Yil butun son boʻlishi kerak",
+    "yearMin": "Yil {min} dan kichik boʻlmasligi kerak",
+    "yearMax": "Yil {max} dan katta boʻlmasligi kerak",
+    "mileageInt": "Probeg butun son boʻlishi kerak",
+    "mileageNegative": "Probeg manfiy boʻlishi mumkin emas",
+    "engineVolumePositive": "Dvigatel hajmi noldan katta boʻlishi kerak",
+    "engineVolumeMax": "Dvigatel hajmini tekshiring",
+    "cityInvalid": "Shaharni roʻyxatdan tanlang",
+    "pricePositive": "Narx noldan katta boʻlishi kerak",
+    "descriptionMax": "Tavsif {max} belgidan oshmasligi kerak",
+    "photosMin": "Kamida bitta surat qoʻshing",
+    "photosMax": "Koʻpi bilan {max} ta surat"
+  }
+}

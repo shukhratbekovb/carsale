@@ -1,0 +1,222 @@
+{
+  "meta": {
+    "description": "Доверенный маркетплейс купли-продажи автомобилей в Узбекистане"
+  },
+  "nav": {
+    "catalog": "Каталог",
+    "favorites": "Избранное",
+    "myListings": "Мои объявления",
+    "sell": "Продать авто",
+    "login": "Войти"
+  },
+  "languageSwitcher": {
+    "label": "Язык"
+  },
+  "footer": {
+    "privacy": "Политика конфиденциальности",
+    "terms": "Пользовательское соглашение"
+  },
+  "locationPicker": {
+    "searchPlaceholder": "Город, область",
+    "detect": "Определить автоматически",
+    "geoUnsupported": "Геолокация не поддерживается браузером",
+    "geoFailed": "Не удалось определить местоположение — проверьте разрешение браузера"
+  },
+  "home": {
+    "title": "Автомобили, которым можно доверять",
+    "statsCount": "{count, plural, one {# объявление} few {# объявления} many {# объявлений} other {# объявления}}",
+    "statsSuffix": "· 100% с AI-оценкой Deal Rating",
+    "searchPlaceholder": "Найти Chevrolet Cobalt",
+    "searchLabel": "Поиск по объявлениям",
+    "searchSubmit": "Найти",
+    "apply": "Применить",
+    "freshListings": "Свежие объявления",
+    "viewAll": "Смотреть все →",
+    "popularBrands": "Популярные марки",
+    "allListings": "Все объявления →",
+    "chips": {
+      "make": "Марка",
+      "model": "Модель",
+      "year": "Год",
+      "transmission": "КПП",
+      "mileage": "Пробег",
+      "price": "Цена"
+    }
+  },
+  "catalog": {
+    "title": "Каталог объявлений",
+    "count": "{count, plural, one {# объявление} few {# объявления} many {# объявлений} other {# объявления}}",
+    "noResults": "По вашему запросу ничего не найдено. Показываем похожие объявления.",
+    "sortLabel": "Сортировка",
+    "sortDate": "Сначала новые",
+    "sortPrice": "Сначала дешёвые",
+    "sortDealRating": "Сначала выгодные",
+    "viewGrid": "Вид: галерея",
+    "viewList": "Вид: список",
+    "filters": {
+      "make": "Марка",
+      "model": "Модель",
+      "yearFrom": "Год от",
+      "yearTo": "Год до",
+      "priceFrom": "Цена от, сум",
+      "priceTo": "Цена до, сум",
+      "mileageFrom": "Пробег от, км",
+      "mileageTo": "Пробег до, км",
+      "transmission": "КПП",
+      "driveType": "Привод",
+      "dealRating": "Deal Rating",
+      "city": "Город",
+      "anyFeminine": "Любая",
+      "anyMasculine": "Любой",
+      "from": "от",
+      "to": "до",
+      "verifiedOnly": "Только проверенные продавцы",
+      "reset": "Сбросить",
+      "apply": "Применить"
+    }
+  },
+  "listing": {
+    "transmission": {
+      "AUTOMATIC": "Автомат",
+      "MANUAL": "Механика",
+      "CVT": "Вариатор",
+      "ROBOT": "Робот"
+    },
+    "driveType": {
+      "FWD": "Передний",
+      "RWD": "Задний",
+      "AWD": "Полный (AWD)",
+      "4WD": "Полный (4WD)"
+    },
+    "dealRating": {
+      "GREAT_DEAL": "Отличная сделка",
+      "FAIR_PRICE": "Честная цена",
+      "OVERPRICED": "Завышенная цена",
+      "UNAVAILABLE": "Оценка недоступна"
+    },
+    "condition": {
+      "NEW": "Новое",
+      "GOOD": "Хорошее",
+      "FAIR": "Среднее",
+      "POOR": "Плохое"
+    },
+    "fuelType": {
+      "PETROL": "Бензин",
+      "DIESEL": "Дизель",
+      "GAS": "Газ",
+      "ELECTRIC": "Электро",
+      "HYBRID": "Гибрид"
+    },
+    "verified": "Проверен",
+    "mileageFlag": "Пробег требует проверки",
+    "mileageFlagReason": "Заявленный пробег не совпадает с ожидаемым для года выпуска.",
+    "photoUnavailable": "Фото объявления недоступно"
+  },
+  "listingPage": {
+    "backToCatalog": "← Назад в каталог",
+    "descriptionTitle": "Описание",
+    "specsTitle": "Характеристики",
+    "specs": {
+      "year": "Год выпуска",
+      "mileage": "Пробег",
+      "transmission": "КПП",
+      "driveType": "Привод",
+      "condition": "Состояние",
+      "city": "Город",
+      "color": "Цвет",
+      "engineVolume": "Объём двигателя",
+      "fuel": "Топливо"
+    },
+    "engineVolumeValue": "{value} л",
+    "contactHint": "Свяжитесь с продавцом, не раскрывая свой номер телефона.",
+    "loginToChat": "Войдите, чтобы написать",
+    "metaDescription": "{make} {model} {year} года, {mileage}, {city}."
+  },
+  "auth": {
+    "loginTitle": "Вход",
+    "otpTitle": "Подтверждение кода",
+    "phoneLabel": "Номер телефона",
+    "phonePlaceholder": "+998901234567",
+    "getCode": "Получить код",
+    "sendingCode": "Отправка...",
+    "codeLabel": "Код из SMS",
+    "codeSentTo": "Код отправлен на {phone}",
+    "confirm": "Подтвердить",
+    "verifying": "Проверка...",
+    "resend": "Отправить повторно",
+    "resendIn": "Отправить повторно через {seconds} с",
+    "changePhone": "Изменить номер",
+    "invalidCode": "Неверный код. Осталось попыток: {attemptsRemaining}",
+    "smsUnavailable": "Не удалось отправить SMS, попробуйте позже",
+    "lockedTitle": "Слишком много попыток",
+    "lockedMessage": "Повторите через {time}"
+  },
+  "sell": {
+    "pageTitle": "Разместить объявление",
+    "steps": {
+      "VEHICLE_DETAILS": "Характеристики",
+      "PHOTOS": "Фотографии",
+      "PRICE": "Оценка цены",
+      "REVIEW": "Проверка и публикация"
+    },
+    "back": "Назад",
+    "next": "Далее",
+    "submit": "Опубликовать",
+    "submitting": "Отправка...",
+    "makeLabel": "Марка",
+    "modelLabel": "Модель",
+    "yearLabel": "Год выпуска",
+    "mileageLabel": "Пробег, км",
+    "conditionLabel": "Состояние",
+    "colorLabel": "Цвет",
+    "transmissionLabel": "Коробка передач",
+    "driveTypeLabel": "Привод",
+    "engineVolumeLabel": "Объём двигателя, л",
+    "fuelTypeLabel": "Тип топлива",
+    "cityLabel": "Город",
+    "priceLabel": "Цена, UZS",
+    "selectPlaceholder": "Выберите",
+    "photosHint": "До {max} фото. Госномер и VIN замазываются автоматически.",
+    "addPhotos": "Добавить фото",
+    "photoRemove": "Удалить",
+    "photoBlurPending": "Определяем номер и VIN...",
+    "photoBlurDone": "Номер и VIN замазаны",
+    "photoBlurFailed": "Не удалось определить область для блюра",
+    "photoBlurRetry": "Повторить",
+    "photoAdjustBlur": "Скорректировать область блюра",
+    "photoBlurRegionLabel": "Область {index} (X, Y, ширина, высота в % от фото)",
+    "descriptionLabel": "Описание",
+    "descriptionPlaceholder": "Расскажите об автомобиле: комплектация, история обслуживания, состояние...",
+    "priceEstimateLoading": "Оцениваем справедливую цену...",
+    "priceEstimateFailed": "Не удалось получить оценку цены",
+    "priceEstimateRetry": "Повторить",
+    "priceEstimateRecommended": "Рекомендованный диапазон: {min, number} – {max, number} UZS",
+    "reviewVehicleTitle": "Характеристики",
+    "reviewPhotosTitle": "Фото ({count})",
+    "reviewPriceTitle": "Оценка цены",
+    "reviewEdit": "Изменить",
+    "reviewMileage": "{value, number} км",
+    "reviewPrice": "{value, number} UZS",
+    "submittedTitle": "Объявление отправлено на модерацию",
+    "submittedMessage": "Обычно проверка занимает не более 30 минут. Мы уведомим вас, когда объявление опубликуется.",
+    "backToCatalog": "В каталог"
+  },
+  "validation": {
+    "phoneFormat": "Введите номер в формате +998901234567",
+    "otpCode": "Введите код из {length} цифр",
+    "makeRequired": "Укажите марку",
+    "modelRequired": "Укажите модель",
+    "yearInt": "Год должен быть целым числом",
+    "yearMin": "Год не раньше {min}",
+    "yearMax": "Год не позже {max}",
+    "mileageInt": "Пробег должен быть целым числом",
+    "mileageNegative": "Пробег не может быть отрицательным",
+    "engineVolumePositive": "Объём двигателя должен быть больше нуля",
+    "engineVolumeMax": "Проверьте объём двигателя",
+    "cityInvalid": "Выберите город из списка",
+    "pricePositive": "Цена должна быть больше нуля",
+    "descriptionMax": "Описание не длиннее {max} символов",
+    "photosMin": "Добавьте хотя бы одно фото",
+    "photosMax": "Максимум {max} фото"
+  }
+}
