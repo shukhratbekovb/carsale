@@ -26,16 +26,19 @@ export function createVehicleDetailsSchema(t: ValidationTranslator) {
   return z.object({
     make: z.string().trim().min(1, t('makeRequired')),
     model: z.string().trim().min(1, t('modelRequired')),
+    // Строка-сообщение у z.coerce.number()/z.enum() покрывает базовую проверку
+    // типа: пустое число (undefined → NaN) и невыбранный <select> ('') иначе
+    // падают в неперeводимый zod-дефолт "Invalid input".
     year: z.coerce
-      .number()
+      .number(t('yearRequired'))
       .int(t('yearInt'))
       .min(MIN_YEAR, t('yearMin', { min: MIN_YEAR }))
       .max(CURRENT_YEAR + 1, t('yearMax', { max: CURRENT_YEAR + 1 })),
-    mileageKm: z.coerce.number().int(t('mileageInt')).min(0, t('mileageNegative')),
-    condition: z.enum(CONDITION_VALUES),
+    mileageKm: z.coerce.number(t('mileageRequired')).int(t('mileageInt')).min(0, t('mileageNegative')),
+    condition: z.enum(CONDITION_VALUES, t('conditionRequired')),
     color: z.string().trim().min(1).optional(),
-    transmission: z.enum(TRANSMISSION_VALUES),
-    driveType: z.enum(DRIVE_TYPE_VALUES),
+    transmission: z.enum(TRANSMISSION_VALUES, t('transmissionRequired')),
+    driveType: z.enum(DRIVE_TYPE_VALUES, t('driveTypeRequired')),
     engineVolume: z.coerce
       .number()
       .positive(t('engineVolumePositive'))
@@ -43,7 +46,7 @@ export function createVehicleDetailsSchema(t: ValidationTranslator) {
       .optional(),
     fuelType: z.enum(FUEL_TYPE_VALUES).optional(),
     city: z.enum(CITY_NAMES, t('cityInvalid')),
-    priceUzs: z.coerce.number().positive(t('pricePositive')),
+    priceUzs: z.coerce.number(t('priceRequired')).positive(t('pricePositive')),
   });
 }
 
