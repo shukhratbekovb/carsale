@@ -36,7 +36,13 @@
     - Zod-схемы валидации — фабрики `create*Schema(t)` с переводчиком namespace'а `validation` (`lib/validation/translator.ts`); в тестах схем — `createTranslator` из next-intl без React-дерева. Enum-списки значений — `*_VALUES` в `types/listing.ts` (общие для фильтров, селектов wizard'а и схем)
     - Тесты: `src/test/utils.tsx` оборачивает всё в `NextIntlClientProvider` с RU-словарём (ассерты остались на русских строках); vitest инлайнит `next-intl`/`use-intl` (ESM-сабпат `next/navigation`); моки роутера в тестах форм/wizard'а — на `@/i18n/navigation`, не `next/navigation`. 132/132 зелёные
     - **Найдено и исправлено при живой проверке**: пустая форма характеристик показывала 5 непереводимых zod-дефолтов «Invalid input» (NaN у нетронутых `z.coerce.number()`, `''` у невыбранных `z.enum()`-селектов) — добавлены `*Required`-сообщения в обе локали (существовало и до i18n)
-    - **Хвосты i18n**: мок-данные (города «Ташкент», цвета, описания объявлений) остаются русскими строками данных — локализуются вместе с реальным Core API; CI-гейт «0 непереведённых строк» (frontend-plan.md §7) ещё не поднят — вместе с остальными CI-гейтами
+    - **Хвосты i18n**: мок-данные (города «Ташкент», цвета, описания объявлений) остаются русскими строками данных — локализуются вместе с реальным Core API
+14. **Первые CI-гейты и тестовые хвосты — 2026-07-11**:
+    - `.github/workflows/ci.yml` — на каждый push/PR: typecheck, lint, vitest, production build (remote: github.com/shukhratbekovb/carsale)
+    - Гейт «0 непереведённых строк» на уровне словарей — `web/messages/parity.test.ts` (одинаковые наборы ключей uz/ru, нет пустых сообщений, ICU-аргументы совпадают)
+    - a11y-смоук (WCAG 2.1 AA) — `web/src/test/a11y.test.tsx` на vitest-axe: Header/Footer, ListingCard, CatalogFilters, форма характеристик wizard'а; color-contrast выключен (jsdom), полный axe-аудит живых страниц остаётся в FE-10
+    - `select-field.test.tsx` — закрыт последний тестовый хвост FE-3 (написан test-agent'ом); итого 145 тестов
+    - **Не поднято из CI-гейтов**: bundlewatch (нужны бюджеты) и lighthouse-ci (нужен запуск сервера в CI) — следующие кандидаты; e2e Playwright-сценарии — FE-10
 
 ## В работе / следующий шаг
 
