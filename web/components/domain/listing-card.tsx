@@ -24,9 +24,13 @@ export function ListingCard({ listing }: { listing: Listing }) {
         <ListingPhotoPlaceholder className="aspect-[4/3] w-full" />
         <div className="space-y-2 p-4 pb-0">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="font-semibold leading-tight">
+            {/* h2, не h3: карточка используется сразу после <h1> без промежуточного
+                <h2> секции на /catalog и /favorites — h3 давал пропуск уровня
+                (Lighthouse a11y: heading-order). На /, где перед гридом уже есть
+                свой <h2> секции, повтор уровня h2→h2 валиден (не "пропуск"). */}
+            <h2 className="font-semibold leading-tight">
               {listing.make} {listing.model}, {listing.year}
-            </h3>
+            </h2>
             {listing.sellerVerified && <VerifiedBadge />}
           </div>
           <p className="text-lg font-bold">{formatUzs(listing.priceUzs, locale)}</p>
