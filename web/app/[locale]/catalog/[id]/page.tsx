@@ -10,6 +10,7 @@ import { VerifiedBadge } from '@/components/domain/verified-badge';
 import { Link } from '@/i18n/navigation';
 import { formatMileage, formatUzs } from '@/lib/format';
 import { mockListings } from '@/lib/mock/listings';
+import { VEHICLE_REPORT_PRICE_UZS } from '@/lib/mock/payment';
 import type { Listing } from '@/types/listing';
 
 interface ListingPageProps {
@@ -42,6 +43,7 @@ export async function generateMetadata({ params }: ListingPageProps): Promise<Me
 export default function ListingPage({ params }: ListingPageProps) {
   const t = useTranslations('listingPage');
   const tListing = useTranslations('listing');
+  const tPayment = useTranslations('payment');
   const locale = useLocale();
   const listing = getListing(params.id);
   if (!listing) notFound();
@@ -123,6 +125,21 @@ export default function ListingPage({ params }: ListingPageProps) {
               >
                 {t('loginToChat')}
               </Link>
+            </div>
+
+            <div className="border-t pt-4">
+              {/* Платный отчёт (FR-10: «оплата за публикацию и/или расширенный
+                  отчёт») — публикация в MVP бесплатна, эта фича демонстрирует
+                  именно ветку отчёта. Флоу — FE-6, см. components/payment. */}
+              <Link
+                href={`/payment/${listing.id}`}
+                className="block w-full rounded-md border px-4 py-2 text-center text-sm font-medium transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                {tPayment('reportCta')}
+              </Link>
+              <p className="mt-1.5 text-center text-xs text-muted-foreground">
+                {tPayment('reportCtaHint')} · {formatUzs(VEHICLE_REPORT_PRICE_UZS, locale)}
+              </p>
             </div>
           </div>
         </aside>

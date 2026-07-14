@@ -6,6 +6,7 @@ import { CatalogFilters } from '@/components/catalog/catalog-filters';
 import { ListingCard } from '@/components/domain/listing-card';
 import { Footer } from '@/components/layout/footer';
 import { Header } from '@/components/layout/header';
+import { GatewaySelect } from '@/components/payment/gateway-select';
 import { VehicleDetailsStep } from '@/components/sell/vehicle-details-step';
 import { mockListings } from '@/lib/mock/listings';
 import { createInitialDraftState } from '@/lib/sell/wizard-flow';
@@ -62,5 +63,10 @@ test('VehicleDetailsStep (самая тяжёлая форма) has no axe viola
   const { container } = render(
     <VehicleDetailsStep draft={createInitialDraftState().draft.vehicle} onComplete={() => {}} />
   );
+  expect(await axe(container, AXE_OPTIONS)).toHaveNoViolations();
+});
+
+test('GatewaySelect (FE-6 экран выбора шлюза) has no axe violations', async () => {
+  const { container } = render(<GatewaySelect listingId="1" amountUzs={45_000} />);
   expect(await axe(container, AXE_OPTIONS)).toHaveNoViolations();
 });
