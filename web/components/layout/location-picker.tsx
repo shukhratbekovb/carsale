@@ -2,14 +2,15 @@
 
 import { useId, useMemo, useState } from 'react';
 import { Loader2, MapPin, Navigation } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useLocalStorage } from '@/hooks/use-local-storage';
-import { DEFAULT_CITY, UZ_CITIES } from '@/lib/data/uz-cities';
+import { DEFAULT_CITY, getCityDisplayName, UZ_CITIES } from '@/lib/data/uz-cities';
 import { findNearestCity } from '@/lib/geo';
 import { cn } from '@/lib/utils';
 
 export function LocationPicker() {
   const t = useTranslations('locationPicker');
+  const locale = useLocale();
   const [city, setCity] = useLocalStorage('carsale:city', DEFAULT_CITY);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -17,10 +18,12 @@ export function LocationPicker() {
   const [error, setError] = useState<string | null>(null);
   const panelId = useId();
 
-  const filteredCities = useMemo(
-    () => UZ_CITIES.filter((c) => c.name.toLowerCase().includes(query.trim().toLowerCase())),
-    [query]
-  );
+  const filteredCities = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return UZ_CITIES.filter(
+      (c) => c.name.toLowerCase().includes(needle) || c.nameUz.toLowerCase().includes(needle)
+    );
+  }, [query]);
 
   function selectCity(name: string) {
     setCity(name);
@@ -59,7 +62,7 @@ export function LocationPicker() {
         className="inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground"
       >
         <MapPin className="h-4 w-4" aria-hidden="true" />
-        {city}
+        {getCityDisplayName(city, locale)}
       </button>
       {open && (
         <div
@@ -98,7 +101,7 @@ export function LocationPicker() {
                   c.name === city ? 'border-primary bg-primary text-primary-foreground' : 'hover:bg-accent'
                 )}
               >
-                {c.name}
+                {getCityDisplayName(c.name, locale)}
               </button>
             ))}
           </div>

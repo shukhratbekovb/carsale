@@ -2,9 +2,10 @@
 
 import { useSearchParams } from 'next/navigation';
 import { type ReactNode, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/input';
 import { useRouter } from '@/i18n/navigation';
+import { getCityDisplayName } from '@/lib/data/uz-cities';
 import { mockListings } from '@/lib/mock/listings';
 import { DEAL_RATING_VALUES, DRIVE_TYPE_VALUES, TRANSMISSION_VALUES } from '@/types/listing';
 
@@ -28,6 +29,7 @@ function Field({ label, htmlFor, children }: { label: string; htmlFor?: string; 
 export function CatalogFilters() {
   const t = useTranslations('catalog.filters');
   const tListing = useTranslations('listing');
+  const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -250,7 +252,7 @@ export function CatalogFilters() {
             <option value="">{t('anyMasculine')}</option>
             {CITIES.map((c) => (
               <option key={c} value={c}>
-                {c}
+                {getCityDisplayName(c, locale)}
               </option>
             ))}
           </select>

@@ -3,9 +3,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { DealRatingBadge } from '@/components/domain/deal-rating-badge';
 import { Button } from '@/components/ui/button';
+import { getCityDisplayName } from '@/lib/data/uz-cities';
 import { createReviewSchema, type ReviewInput } from '@/lib/validation/sell';
 import type { ListingDraft } from '@/types/sell';
 
@@ -19,6 +20,7 @@ export function ReviewStep({ draft, onComplete, onSubmit }: ReviewStepProps) {
   const t = useTranslations('sell');
   const tListing = useTranslations('listing');
   const tValidation = useTranslations('validation');
+  const locale = useLocale();
 
   const reviewSchema = useMemo(() => createReviewSchema(tValidation), [tValidation]);
 
@@ -57,7 +59,8 @@ export function ReviewStep({ draft, onComplete, onSubmit }: ReviewStepProps) {
           {vehicle.condition && tListing(`condition.${vehicle.condition}`)} ·{' '}
           {vehicle.transmission && tListing(`transmission.${vehicle.transmission}`)} ·{' '}
           {vehicle.driveType && tListing(`driveType.${vehicle.driveType}`)}
-          {vehicle.fuelType ? ` · ${tListing(`fuelType.${vehicle.fuelType}`)}` : ''} · {vehicle.city}
+          {vehicle.fuelType ? ` · ${tListing(`fuelType.${vehicle.fuelType}`)}` : ''} ·{' '}
+          {vehicle.city && getCityDisplayName(vehicle.city, locale)}
         </p>
         <p className="text-sm font-medium">
           {vehicle.priceUzs != null && t('reviewPrice', { value: vehicle.priceUzs })}

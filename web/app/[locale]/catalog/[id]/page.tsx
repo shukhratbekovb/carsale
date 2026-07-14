@@ -9,7 +9,9 @@ import { ListingPhotoPlaceholder } from '@/components/domain/listing-photo-place
 import { MileageFlag } from '@/components/domain/mileage-flag';
 import { VerifiedBadge } from '@/components/domain/verified-badge';
 import { Link } from '@/i18n/navigation';
+import { getCityDisplayName } from '@/lib/data/uz-cities';
 import { formatMileage, formatUzs } from '@/lib/format';
+import { getColorDisplayName } from '@/lib/mock/listing-translations';
 import { mockListings } from '@/lib/mock/listings';
 import { VEHICLE_REPORT_PRICE_UZS } from '@/lib/mock/payment';
 import type { Listing } from '@/types/listing';
@@ -34,7 +36,7 @@ export async function generateMetadata({ params }: ListingPageProps): Promise<Me
       model: listing.model,
       year: listing.year,
       mileage: formatMileage(listing.mileageKm, params.locale),
-      city: listing.city,
+      city: getCityDisplayName(listing.city, params.locale),
     }),
   };
 }
@@ -55,9 +57,9 @@ export default function ListingPage({ params }: ListingPageProps) {
     [t('specs.transmission'), tListing(`transmission.${listing.transmission}`)],
     [t('specs.driveType'), tListing(`driveType.${listing.driveType}`)],
     [t('specs.condition'), tListing(`condition.${listing.condition}`)],
-    [t('specs.city'), listing.city],
+    [t('specs.city'), getCityDisplayName(listing.city, locale)],
   ];
-  if (listing.color) specs.push([t('specs.color'), listing.color]);
+  if (listing.color) specs.push([t('specs.color'), getColorDisplayName(listing.color, locale)]);
   if (listing.engineVolume)
     specs.push([t('specs.engineVolume'), t('engineVolumeValue', { value: listing.engineVolume })]);
   if (listing.fuelType) specs.push([t('specs.fuel'), tListing(`fuelType.${listing.fuelType}`)]);
@@ -114,7 +116,7 @@ export default function ListingPage({ params }: ListingPageProps) {
               {listing.sellerVerified && <VerifiedBadge />}
             </div>
             <p className="text-sm text-muted-foreground">
-              {formatMileage(listing.mileageKm, locale)} · {listing.city}
+              {formatMileage(listing.mileageKm, locale)} · {getCityDisplayName(listing.city, locale)}
             </p>
 
             <div>

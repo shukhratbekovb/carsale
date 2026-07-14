@@ -5,6 +5,7 @@ import { ListingPhotoPlaceholder } from '@/components/domain/listing-photo-place
 import { MileageFlag } from '@/components/domain/mileage-flag';
 import { VerifiedBadge } from '@/components/domain/verified-badge';
 import { Link } from '@/i18n/navigation';
+import { getCityDisplayName } from '@/lib/data/uz-cities';
 import { formatMileage, formatUzs } from '@/lib/format';
 import type { Listing } from '@/types/listing';
 
@@ -30,7 +31,7 @@ export function ListingRow({ listing }: { listing: Listing }) {
             {listing.sellerVerified && <VerifiedBadge />}
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
-            {formatMileage(listing.mileageKm, locale)} · {listing.city}
+            {formatMileage(listing.mileageKm, locale)} · {getCityDisplayName(listing.city, locale)}
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <DealRatingBadge label={listing.dealRating.label} />

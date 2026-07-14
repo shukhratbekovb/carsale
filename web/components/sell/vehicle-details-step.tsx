@@ -3,11 +3,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMemo } from 'react';
 import { useForm, type Resolver } from 'react-hook-form';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { FormField } from '@/components/forms/form-field';
 import { SelectField } from '@/components/forms/select-field';
 import { Button } from '@/components/ui/button';
-import { UZ_CITIES } from '@/lib/data/uz-cities';
+import { getCityDisplayName, UZ_CITIES } from '@/lib/data/uz-cities';
 import { createVehicleDetailsSchema, type VehicleDetailsInput } from '@/lib/validation/sell';
 import {
   CONDITION_VALUES,
@@ -16,8 +16,6 @@ import {
   TRANSMISSION_VALUES,
 } from '@/types/listing';
 import type { VehicleDetailsDraft } from '@/types/sell';
-
-const CITY_OPTIONS = UZ_CITIES.map((city) => ({ value: city.name, label: city.name }));
 
 interface VehicleDetailsStepProps {
   draft: VehicleDetailsDraft;
@@ -28,8 +26,16 @@ export function VehicleDetailsStep({ draft, onComplete }: VehicleDetailsStepProp
   const t = useTranslations('sell');
   const tListing = useTranslations('listing');
   const tValidation = useTranslations('validation');
+  const locale = useLocale();
 
   const schema = useMemo(() => createVehicleDetailsSchema(tValidation), [tValidation]);
+
+  // value остаётся каноническим (рус.) именем города — то же значение, что
+  // валидирует vehicleDetailsSchema (z.enum(CITY_NAMES)); переводится только label.
+  const cityOptions = UZ_CITIES.map((city) => ({
+    value: city.name,
+    label: getCityDisplayName(city.name, locale),
+  }));
 
   const conditionOptions = CONDITION_VALUES.map((value) => ({
     value,
@@ -127,7 +133,7 @@ export function VehicleDetailsStep({ draft, onComplete }: VehicleDetailsStepProp
           name="city"
           control={control}
           label={t('cityLabel')}
-          options={CITY_OPTIONS}
+          options={cityOptions}
           placeholder={t('selectPlaceholder')}
         />
         <FormField
