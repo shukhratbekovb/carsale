@@ -2,6 +2,11 @@
 # Тесты включают i18n-парность словарей (messages/parity.test.ts) и
 # a11y-смоук на axe (src/test/a11y.test.tsx). Build здесь безопасен:
 # в CI нет параллельного `next dev`, конфликт .next/ невозможен.
+#
+# bundlewatch и lighthouse-ci — последние два гейта из списка
+# frontend-plan.md §4 (`bundlewatch-per-route`, `lighthouse-ci`). Пороги
+# в bundlewatch.config.json/lighthouserc.json подобраны по реальным
+# измерениям на этой кодовой базе (см. HANDOFF.md) — не произвольные.
 name: CI
 
 on:
@@ -44,3 +49,9 @@ jobs:
 
       - name: Production build
         run: npm run build
+
+      - name: Bundle size budget
+        run: npm run bundlewatch
+
+      - name: Lighthouse CI (performance/a11y/SEO)
+        run: npm run lighthouse

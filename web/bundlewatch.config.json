@@ -1,0 +1,19 @@
+{
+  "files": [
+    {
+      "path": ".next/static/chunks/117-*.js",
+      "maxSize": "35 kB"
+    },
+    {
+      "path": ".next/static/chunks/fd9d1056-*.js",
+      "maxSize": "58 kB"
+    },
+    {
+      "path": ".next/static/chunks/app/**/page-*.js",
+      "maxSize": "35 kB"
+    }
+  ],
+  "ci": {
+    "trackBranches": ["main"]
+  }
+}

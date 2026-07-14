@@ -10,7 +10,9 @@
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "bundlewatch": "bundlewatch --config bundlewatch.config.json",
+    "lighthouse": "lhci autorun --config=lighthouserc.json"
   },
   "dependencies": {
     "@hookform/resolvers": "latest",
@@ -25,6 +27,7 @@
     "zod": "latest"
   },
   "devDependencies": {
+    "@lhci/cli": "^0.15.1",
     "@testing-library/jest-dom": "latest",
     "@testing-library/react": "latest",
     "@testing-library/user-event": "latest",
@@ -34,6 +37,7 @@
     "@vitejs/plugin-react": "latest",
     "@vitest/coverage-v8": "latest",
     "autoprefixer": "^10.0.0",
+    "bundlewatch": "^0.4.2",
     "eslint": "^8.0.0",
     "eslint-config-next": "^14.0.0",
     "eslint-config-prettier": "latest",
