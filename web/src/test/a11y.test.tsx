@@ -1,5 +1,6 @@
 import { axe } from 'vitest-axe';
 import * as matchers from 'vitest-axe/matchers';
+import userEvent from '@testing-library/user-event';
 import { expect, test, vi } from 'vitest';
 import { render, screen, waitFor } from '@/src/test/utils';
 import { CatalogFilters } from '@/components/catalog/catalog-filters';
@@ -7,6 +8,7 @@ import { ChatWindow } from '@/components/chat/chat-window';
 import { ListingCard } from '@/components/domain/listing-card';
 import { Footer } from '@/components/layout/footer';
 import { Header } from '@/components/layout/header';
+import { NotificationBell } from '@/components/notifications/notification-bell';
 import { GatewaySelect } from '@/components/payment/gateway-select';
 import { VehicleDetailsStep } from '@/components/sell/vehicle-details-step';
 import { mockListings } from '@/lib/mock/listings';
@@ -39,6 +41,32 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
+vi.mock('@/lib/mock/notifications', () => ({
+  mockFetchNotifications: () =>
+    Promise.resolve([
+      {
+        id: 'n1',
+        type: 'NEW_MESSAGE',
+        title: 'Новое сообщение',
+        message: 'Baxtiyor: Да, ещё в продаже',
+        link: '/chat/thread-1',
+        isRead: false,
+        createdAt: '2026-07-14T10:00:00Z',
+      },
+      {
+        id: 'n2',
+        type: 'LISTING_STATUS',
+        title: 'Статус объявления',
+        message: '«Chevrolet Cobalt, 2019» отправлено на модерацию',
+        isRead: true,
+        createdAt: '2026-07-14T09:00:00Z',
+      },
+    ]),
+  subscribeToNotifications: () => () => {},
+  markNotificationRead: () => {},
+  markAllNotificationsRead: () => {},
+}));
+
 test('Header has no axe violations', async () => {
   const { container } = render(<Header />);
   expect(await axe(container, AXE_OPTIONS)).toHaveNoViolations();
@@ -69,6 +97,16 @@ test('VehicleDetailsStep (самая тяжёлая форма) has no axe viola
 
 test('GatewaySelect (FE-6 экран выбора шлюза) has no axe violations', async () => {
   const { container } = render(<GatewaySelect listingId="1" amountUzs={45_000} />);
+  expect(await axe(container, AXE_OPTIONS)).toHaveNoViolations();
+});
+
+test('NotificationBell (FE-7, открытая панель с непрочитанными) has no axe violations', async () => {
+  const user = userEvent.setup();
+  const { container } = render(<NotificationBell />);
+
+  await user.click(await screen.findByRole('button', { name: /непрочитанн/ }));
+  await screen.findByText('Baxtiyor: Да, ещё в продаже');
+
   expect(await axe(container, AXE_OPTIONS)).toHaveNoViolations();
 });
 

@@ -22,6 +22,7 @@ import {
   mockSendMessage,
   subscribeToThread,
 } from '@/lib/mock/chat';
+import { pushNotification } from '@/lib/mock/notifications';
 import type { ChatMessage, ChatThread } from '@/types/chat';
 
 type ChatAction =
@@ -56,6 +57,7 @@ type ThreadLookup = ChatThread | null | undefined;
 
 export function ChatWindow({ threadId }: ChatWindowProps) {
   const t = useTranslations('chat');
+  const tNotifications = useTranslations('notifications');
   const isOnline = useOnlineStatus();
 
   const [thread, setThread] = useState<ThreadLookup>(undefined);
@@ -63,6 +65,14 @@ export function ChatWindow({ threadId }: ChatWindowProps) {
   const [draft, setDraft] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
   const flushingRef = useRef(false);
+
+  // subscribeToThread ниже — замыкание, созданное один раз при монтировании
+  // (эффект зависит только от threadId); без рефа оно бы навсегда видело
+  // thread === undefined из первого рендера (классический stale closure).
+  const threadRef = useRef<ThreadLookup>(undefined);
+  useEffect(() => {
+    threadRef.current = thread;
+  }, [thread]);
 
   // Загрузка треда + истории сообщений при открытии; подписка на push новых
   // (аналог входа в WS-комнату треда, событие new_message).
@@ -81,12 +91,28 @@ export function ChatWindow({ threadId }: ChatWindowProps) {
 
     const unsubscribe = subscribeToThread(threadId, (message) => {
       dispatch({ type: 'RECEIVE', message });
+
+      // Demo-триггер FR-11 (новое сообщение в чате) — только для входящих
+      // (от продавца), не для эха собственных отправленных сообщений.
+      const currentThread = threadRef.current;
+      if (currentThread && message.senderId === currentThread.sellerId) {
+        pushNotification(
+          'NEW_MESSAGE',
+          tNotifications('newMessageTitle'),
+          tNotifications('newMessageBody', {
+            sellerName: currentThread.sellerName,
+            text: message.text,
+          }),
+          `/chat/${threadId}`
+        );
+      }
     });
 
     return () => {
       cancelled = true;
       unsubscribe();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [threadId]);
 
   useEffect(() => {

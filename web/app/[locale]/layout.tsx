@@ -5,6 +5,7 @@ import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Footer } from '@/components/layout/footer';
 import { Header } from '@/components/layout/header';
+import { ToastHost } from '@/components/notifications/toast-host';
 import { routing } from '@/i18n/routing';
 import '../globals.css';
 
@@ -44,6 +45,7 @@ export default function LocaleLayout({ children, params }: LocaleLayoutProps) {
           <Header />
           <div className="flex-1">{children}</div>
           <Footer />
+          <ToastHost />
         </NextIntlClientProvider>
       </body>
     </html>

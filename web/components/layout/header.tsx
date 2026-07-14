@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import { useTranslations } from 'next-intl';
 import { LanguageSwitcher } from '@/components/layout/language-switcher';
 import { LocationPicker } from '@/components/layout/location-picker';
+import { NotificationBell } from '@/components/notifications/notification-bell';
 import { Link } from '@/i18n/navigation';
 
 export function Header() {
@@ -34,6 +35,7 @@ export function Header() {
         </nav>
         <div className="ml-auto flex items-center gap-2">
           {/* useSearchParams внутри LanguageSwitcher требует Suspense-границу в SSR. */}
+          <NotificationBell />
           <Suspense fallback={null}>
             <LanguageSwitcher />
           </Suspense>

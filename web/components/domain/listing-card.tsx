@@ -19,7 +19,11 @@ export function ListingCard({ listing }: { listing: Listing }) {
 
   return (
     <article className="relative overflow-hidden rounded-lg border bg-card text-card-foreground shadow-sm">
-      <FavoriteButton listingId={listing.id} className="absolute right-3 top-3 z-10" />
+      <FavoriteButton
+        listingId={listing.id}
+        listingTitle={`${listing.make} ${listing.model}, ${listing.year}`}
+        className="absolute right-3 top-3 z-10"
+      />
       <Link href={`/catalog/${listing.id}`} className="block">
         <ListingPhotoPlaceholder className="aspect-[4/3] w-full" />
         <div className="space-y-2 p-4 pb-0">

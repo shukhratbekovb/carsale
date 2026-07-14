@@ -8,6 +8,7 @@ import { ReviewStep } from '@/components/sell/review-step';
 import { VehicleDetailsStep } from '@/components/sell/vehicle-details-step';
 import { Button } from '@/components/ui/button';
 import { useRouter } from '@/i18n/navigation';
+import { pushNotification } from '@/lib/mock/notifications';
 import type { PriceEstimateInput, PriceEstimateResult } from '@/lib/mock/price-estimate';
 import {
   addPhoto,
@@ -114,6 +115,7 @@ function StepProgress({ current }: { current: WizardStep }) {
 
 export function SellWizard() {
   const t = useTranslations('sell');
+  const tNotifications = useTranslations('notifications');
   const router = useRouter();
   const [state, dispatch] = useReducer(wizardReducer, undefined, createInitialDraftState);
 
@@ -170,7 +172,20 @@ export function SellWizard() {
         <ReviewStep
           draft={state.draft}
           onComplete={(data: ReviewInput) => dispatch({ type: 'SUBMIT_REVIEW', description: data.description })}
-          onSubmit={() => dispatch({ type: 'SUBMIT_DRAFT', now: Date.now() })}
+          onSubmit={() => {
+            dispatch({ type: 'SUBMIT_DRAFT', now: Date.now() });
+            // Demo-триггер FR-11 (статус объявления) — тот же момент, что
+            // UC-08 основной поток называет отправкой уведомления продавцу
+            // (docs/analysis/03-use-case-model.md:211), только текст отражает
+            // реальный статус этого флоу (на модерации, не «опубликовано»).
+            const { make, model, year } = state.draft.vehicle;
+            pushNotification(
+              'LISTING_STATUS',
+              tNotifications('listingStatusTitle'),
+              tNotifications('listingStatusBody', { listingTitle: `${make} ${model}, ${year}` }),
+              '/my-listings'
+            );
+          }}
         />
       )}
 

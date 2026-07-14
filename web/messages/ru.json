@@ -18,6 +18,28 @@
     "login": "Войти",
     "createListing": "Разместить объявление"
   },
+  "notifications": {
+    "bellLabel": "Уведомления",
+    "unreadBadge": "{count, plural, one {# непрочитанное} few {# непрочитанных} many {# непрочитанных} other {# непрочитанных}}",
+    "emptyTitle": "Пока нет уведомлений",
+    "markAllRead": "Отметить все прочитанными",
+    "settingsLink": "Настройки уведомлений",
+    "newMessageTitle": "Новое сообщение",
+    "newMessageBody": "{sellerName}: {text}",
+    "priceDropTitle": "Снижение цены",
+    "priceDropBody": "Цена на «{listingTitle}» снижена — посмотрите объявление",
+    "listingStatusTitle": "Статус объявления",
+    "listingStatusBody": "«{listingTitle}» отправлено на модерацию",
+    "dismiss": "Закрыть",
+    "preferencesTitle": "Уведомления",
+    "preferencesHint": "Отключите типы уведомлений, которые не хотите получать. Доставляются по email и push (браузер).",
+    "typeNewMessage": "Новые сообщения в чате",
+    "typePriceDrop": "Снижение цены на избранное",
+    "typeListingStatus": "Статус моих объявлений"
+  },
+  "profile": {
+    "pageTitle": "Профиль"
+  },
   "chat": {
     "pageTitle": "Сообщения",
     "emptyTitle": "Пока нет переписок",

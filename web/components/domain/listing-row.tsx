@@ -17,7 +17,11 @@ export function ListingRow({ listing }: { listing: Listing }) {
   return (
     <article className="flex gap-4 rounded-lg border bg-card p-3 text-card-foreground shadow-sm">
       <div className="relative shrink-0">
-        <FavoriteButton listingId={listing.id} className="absolute right-1 top-1 z-10" />
+        <FavoriteButton
+          listingId={listing.id}
+          listingTitle={`${listing.make} ${listing.model}, ${listing.year}`}
+          className="absolute right-1 top-1 z-10"
+        />
         <Link href={`/catalog/${listing.id}`}>
           <ListingPhotoPlaceholder className="h-32 w-44 rounded-md" />
         </Link>

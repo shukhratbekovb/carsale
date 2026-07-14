@@ -18,6 +18,28 @@
     "login": "Kirish",
     "createListing": "Eʼlon joylashtirish"
   },
+  "notifications": {
+    "bellLabel": "Bildirishnomalar",
+    "unreadBadge": "{count, number} ta oʻqilmagan",
+    "emptyTitle": "Hozircha bildirishnomalar yoʻq",
+    "markAllRead": "Barchasini oʻqilgan deb belgilash",
+    "settingsLink": "Bildirishnoma sozlamalari",
+    "newMessageTitle": "Yangi xabar",
+    "newMessageBody": "{sellerName}: {text}",
+    "priceDropTitle": "Narx pasaytirildi",
+    "priceDropBody": "«{listingTitle}» narxi pasaytirildi — eʼlonni koʻring",
+    "listingStatusTitle": "Eʼlon holati",
+    "listingStatusBody": "«{listingTitle}» moderatsiyaga yuborildi",
+    "dismiss": "Yopish",
+    "preferencesTitle": "Bildirishnomalar",
+    "preferencesHint": "Kerak boʻlmagan bildirishnoma turlarini oʻchiring. Email va push (brauzer) orqali yetkaziladi.",
+    "typeNewMessage": "Chatdagi yangi xabarlar",
+    "typePriceDrop": "Saralanganlar narxining pasayishi",
+    "typeListingStatus": "Mening eʼlonlarim holati"
+  },
+  "profile": {
+    "pageTitle": "Profil"
+  },
   "chat": {
     "pageTitle": "Xabarlar",
     "emptyTitle": "Hozircha suhbatlar yoʻq",

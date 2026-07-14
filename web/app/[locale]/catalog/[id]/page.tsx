@@ -80,7 +80,11 @@ export default function ListingPage({ params }: ListingPageProps) {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <div className="relative">
-            <FavoriteButton listingId={listing.id} className="absolute right-3 top-3 z-10" />
+            <FavoriteButton
+              listingId={listing.id}
+              listingTitle={`${listing.make} ${listing.model}, ${listing.year}`}
+              className="absolute right-3 top-3 z-10"
+            />
             <ListingPhotoPlaceholder className="aspect-video w-full rounded-lg" />
           </div>
 
