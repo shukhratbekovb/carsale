@@ -18,6 +18,20 @@
     "login": "Kirish",
     "createListing": "Eʼlon joylashtirish"
   },
+  "chat": {
+    "pageTitle": "Xabarlar",
+    "emptyTitle": "Hozircha suhbatlar yoʻq",
+    "emptyMessage": "Eʼlon kartochkasidan sotuvchiga yozing — suhbat shu yerda paydo boʻladi.",
+    "browseCatalog": "Katalogni koʻrish",
+    "unreadBadge": "{count}",
+    "backToInbox": "Barcha suhbatlar",
+    "messagePlaceholder": "Xabar yozing...",
+    "send": "Yuborish",
+    "offlineBanner": "Aloqa yoʻq — aloqa tiklanganda xabarlar yuboriladi",
+    "pendingStatus": "Yuborilmoqda...",
+    "loadingThread": "Suhbat yuklanmoqda...",
+    "threadNotFound": "Suhbat topilmadi"
+  },
   "payment": {
     "reportCta": "Kengaytirilgan tekshiruv hisobotini buyurtma qilish",
     "reportCtaHint": "Probeg tarixi, garovlar, YTHlarda ishtirok etishi",
@@ -52,6 +66,7 @@
     "catalog": "Katalog",
     "favorites": "Saralanganlar",
     "myListings": "Mening eʼlonlarim",
+    "chat": "Xabarlar",
     "sell": "Avto sotish",
     "login": "Kirish"
   },
@@ -175,7 +190,8 @@
     },
     "engineVolumeValue": "{value} l",
     "contactHint": "Telefon raqamingizni oshkor qilmasdan sotuvchi bilan bogʻlaning.",
-    "loginToChat": "Yozish uchun tizimga kiring",
+    "messageSeller": "Sotuvchiga yozish",
+    "startingThread": "Suhbat ochilmoqda...",
     "metaDescription": "{make} {model}, {year}-yil, {mileage}, {city}."
   },
   "auth": {

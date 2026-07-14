@@ -14,3 +14,9 @@ if (typeof window !== 'undefined' && !window.matchMedia) {
     dispatchEvent: () => false,
   });
 }
+
+// jsdom does not implement Element.scrollIntoView (ChatWindow calls it to
+// auto-scroll to the latest message) — same class of gap as matchMedia above.
+if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = () => {};
+}

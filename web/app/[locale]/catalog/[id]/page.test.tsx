@@ -2,6 +2,13 @@ import { render, screen } from '@/src/test/utils';
 import ListingPage from './page';
 import { mockListings } from '@/lib/mock/listings';
 
+// MessageSellerButton (FE-5) calls useRouter() from @/i18n/navigation, which
+// needs a mounted Next.js App Router — not present under plain RTL render.
+vi.mock('@/i18n/navigation', async () => {
+  const actual = await vi.importActual<typeof import('@/i18n/navigation')>('@/i18n/navigation');
+  return { ...actual, useRouter: () => ({ push: vi.fn(), replace: vi.fn() }) };
+});
+
 // Listing #4 has mileageFlag: true with a reason, dealRating FAIR_PRICE (not
 // UNAVAILABLE) and sellerVerified: true — exercises all FR-07 "not lazy" badges
 // on the detail page in one fixture (frontend-plan.md §6/§8).

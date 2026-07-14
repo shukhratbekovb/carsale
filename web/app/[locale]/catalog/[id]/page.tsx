@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
+import { MessageSellerButton } from '@/components/chat/message-seller-button';
 import { DealRatingBadge } from '@/components/domain/deal-rating-badge';
 import { FavoriteButton } from '@/components/domain/favorite-button';
 import { ListingPhotoPlaceholder } from '@/components/domain/listing-photo-placeholder';
@@ -118,13 +119,7 @@ export default function ListingPage({ params }: ListingPageProps) {
 
             <div>
               <p className="mb-3 text-sm text-muted-foreground">{t('contactHint')}</p>
-              {/* Гость не аутентифицирован — UC-06 alt-flow. Реальный чат появится в FE-5/FE-2. */}
-              <Link
-                href={`/auth/login?return=/catalog/${listing.id}`}
-                className="block w-full rounded-md bg-primary px-4 py-2 text-center text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                {t('loginToChat')}
-              </Link>
+              <MessageSellerButton listingId={listing.id} />
             </div>
 
             <div className="border-t pt-4">

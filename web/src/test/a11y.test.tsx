@@ -1,8 +1,9 @@
 import { axe } from 'vitest-axe';
 import * as matchers from 'vitest-axe/matchers';
 import { expect, test, vi } from 'vitest';
-import { render } from '@/src/test/utils';
+import { render, screen, waitFor } from '@/src/test/utils';
 import { CatalogFilters } from '@/components/catalog/catalog-filters';
+import { ChatWindow } from '@/components/chat/chat-window';
 import { ListingCard } from '@/components/domain/listing-card';
 import { Footer } from '@/components/layout/footer';
 import { Header } from '@/components/layout/header';
@@ -68,5 +69,15 @@ test('VehicleDetailsStep (самая тяжёлая форма) has no axe viola
 
 test('GatewaySelect (FE-6 экран выбора шлюза) has no axe violations', async () => {
   const { container } = render(<GatewaySelect listingId="1" amountUzs={45_000} />);
+  expect(await axe(container, AXE_OPTIONS)).toHaveNoViolations();
+});
+
+test('ChatWindow (FE-5, загруженный тред с историей) has no axe violations', async () => {
+  // Реальный мок-модуль (lib/mock/chat.ts), не vi.mock: 'thread-1' засеян
+  // с историей сообщений — ждём, пока асинхронная загрузка отрисует их,
+  // прежде чем гонять axe на пустом/загрузочном состоянии.
+  const { container } = render(<ChatWindow threadId="thread-1" />);
+  await waitFor(() => expect(screen.getByText('Baxtiyor')).toBeInTheDocument());
+
   expect(await axe(container, AXE_OPTIONS)).toHaveNoViolations();
 });

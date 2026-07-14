@@ -18,6 +18,20 @@
     "login": "Войти",
     "createListing": "Разместить объявление"
   },
+  "chat": {
+    "pageTitle": "Сообщения",
+    "emptyTitle": "Пока нет переписок",
+    "emptyMessage": "Напишите продавцу с карточки объявления — переписка появится здесь.",
+    "browseCatalog": "Смотреть каталог",
+    "unreadBadge": "{count}",
+    "backToInbox": "Все переписки",
+    "messagePlaceholder": "Напишите сообщение...",
+    "send": "Отправить",
+    "offlineBanner": "Нет соединения — сообщения будут отправлены, когда связь восстановится",
+    "pendingStatus": "Отправка...",
+    "loadingThread": "Загружаем переписку...",
+    "threadNotFound": "Переписка не найдена"
+  },
   "payment": {
     "reportCta": "Заказать расширенный отчёт о проверке",
     "reportCtaHint": "История пробега, залоги, участие в ДТП",
@@ -52,6 +66,7 @@
     "catalog": "Каталог",
     "favorites": "Избранное",
     "myListings": "Мои объявления",
+    "chat": "Сообщения",
     "sell": "Продать авто",
     "login": "Войти"
   },
@@ -175,7 +190,8 @@
     },
     "engineVolumeValue": "{value} л",
     "contactHint": "Свяжитесь с продавцом, не раскрывая свой номер телефона.",
-    "loginToChat": "Войдите, чтобы написать",
+    "messageSeller": "Написать продавцу",
+    "startingThread": "Открываем чат...",
     "metaDescription": "{make} {model} {year} года, {mileage}, {city}."
   },
   "auth": {

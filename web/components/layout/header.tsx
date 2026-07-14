@@ -11,6 +11,7 @@ export function Header() {
     { href: '/catalog', label: t('catalog') },
     { href: '/favorites', label: t('favorites') },
     { href: '/my-listings', label: t('myListings') },
+    { href: '/chat', label: t('chat') },
   ];
 
   return (
