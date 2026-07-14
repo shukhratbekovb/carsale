@@ -1,5 +1,6 @@
 import { useLocale } from 'next-intl';
 import { DealRatingBadge } from '@/components/domain/deal-rating-badge';
+import { FavoriteButton } from '@/components/domain/favorite-button';
 import { ListingPhotoPlaceholder } from '@/components/domain/listing-photo-placeholder';
 import { MileageFlag } from '@/components/domain/mileage-flag';
 import { VerifiedBadge } from '@/components/domain/verified-badge';
@@ -14,9 +15,12 @@ export function ListingRow({ listing }: { listing: Listing }) {
 
   return (
     <article className="flex gap-4 rounded-lg border bg-card p-3 text-card-foreground shadow-sm">
-      <Link href={`/catalog/${listing.id}`} className="shrink-0">
-        <ListingPhotoPlaceholder className="h-32 w-44 rounded-md" />
-      </Link>
+      <div className="relative shrink-0">
+        <FavoriteButton listingId={listing.id} className="absolute right-1 top-1 z-10" />
+        <Link href={`/catalog/${listing.id}`}>
+          <ListingPhotoPlaceholder className="h-32 w-44 rounded-md" />
+        </Link>
+      </div>
       <div className="flex flex-1 flex-col justify-between gap-2 sm:flex-row sm:items-center">
         <div>
           <div className="flex items-center gap-2">

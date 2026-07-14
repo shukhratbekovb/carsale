@@ -2,6 +2,22 @@
   "meta": {
     "description": "Oʻzbekistondagi ishonchli avtomobil oldi-sotdi marketpleysi"
   },
+  "favorites": {
+    "add": "Saralanganlarga qoʻshish",
+    "remove": "Saralanganlardan olib tashlash",
+    "pageTitle": "Saralanganlar",
+    "count": "{count, number} ta eʼlon",
+    "emptyTitle": "Saralanganlar hozircha boʻsh",
+    "emptyMessage": "Eʼlon kartochkasidagi yurak belgisini bosing — u shu yerda saqlanadi.",
+    "browseCatalog": "Katalogni koʻrish"
+  },
+  "myListings": {
+    "pageTitle": "Mening eʼlonlarim",
+    "loginRequiredTitle": "Eʼlonlaringizni koʻrish uchun tizimga kiring",
+    "loginRequiredMessage": "Bu yerda siz joylashtirgan eʼlonlar koʻrinadi — moderatsiya holati, koʻrishlar va boshqaruv.",
+    "login": "Kirish",
+    "createListing": "Eʼlon joylashtirish"
+  },
   "nav": {
     "catalog": "Katalog",
     "favorites": "Saralanganlar",

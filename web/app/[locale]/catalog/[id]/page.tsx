@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import { DealRatingBadge } from '@/components/domain/deal-rating-badge';
+import { FavoriteButton } from '@/components/domain/favorite-button';
 import { ListingPhotoPlaceholder } from '@/components/domain/listing-photo-placeholder';
 import { MileageFlag } from '@/components/domain/mileage-flag';
 import { VerifiedBadge } from '@/components/domain/verified-badge';
@@ -73,7 +74,10 @@ export default function ListingPage({ params }: ListingPageProps) {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <ListingPhotoPlaceholder className="aspect-video w-full rounded-lg" />
+          <div className="relative">
+            <FavoriteButton listingId={listing.id} className="absolute right-3 top-3 z-10" />
+            <ListingPhotoPlaceholder className="aspect-video w-full rounded-lg" />
+          </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <DealRatingBadge label={listing.dealRating.label} />
