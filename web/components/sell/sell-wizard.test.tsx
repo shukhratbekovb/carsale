@@ -67,6 +67,11 @@ test('blocks advancing past an incomplete vehicle details step', async () => {
   expect(screen.getByLabelText('Марка')).toBeInTheDocument();
 });
 
+// Полный флоу — самый тяжёлый тест сьюты (десятки userEvent.type + несколько
+// async-шагов подряд); дефолтный vitest testTimeout (5с) иногда не укладывается
+// под нагрузкой полного параллельного прогона (не логическая проблема — тест
+// стабильно проходит за ~6-13с изолированно). Явный запас вместо глобального
+// увеличения testTimeout для всей сьюты.
 test('completes the full wizard happy path through to the moderation confirmation', async () => {
   render(<SellWizard />);
 
@@ -88,7 +93,7 @@ test('completes the full wizard happy path through to the moderation confirmatio
   await userEvent.click(screen.getByRole('button', { name: 'Опубликовать' }));
 
   expect(await screen.findByText('Объявление отправлено на модерацию')).toBeInTheDocument();
-});
+}, 15000);
 
 test('going back to vehicle details preserves previously entered values', async () => {
   render(<SellWizard />);
@@ -102,6 +107,7 @@ test('going back to vehicle details preserves previously entered values', async 
   expect(screen.getByLabelText('Цена, UZS')).toHaveValue(95000000);
 });
 
+// Тот же тяжёлый полный флоу + доп. клик — см. комментарий у теста happy path выше.
 test('navigates to /catalog from the moderation confirmation screen', async () => {
   render(<SellWizard />);
 
@@ -121,4 +127,4 @@ test('navigates to /catalog from the moderation confirmation screen', async () =
   await userEvent.click(screen.getByRole('button', { name: 'В каталог' }));
 
   expect(nav.push).toHaveBeenCalledWith('/catalog');
-});
+}, 15000);
