@@ -3,6 +3,8 @@ import * as matchers from 'vitest-axe/matchers';
 import userEvent from '@testing-library/user-event';
 import { expect, test, vi } from 'vitest';
 import { render, screen, waitFor } from '@/src/test/utils';
+import { ModerationQueue } from '@/components/admin/moderation-queue';
+import { UsersTable } from '@/components/admin/users-table';
 import { CatalogFilters } from '@/components/catalog/catalog-filters';
 import { ChatWindow } from '@/components/chat/chat-window';
 import { ListingCard } from '@/components/domain/listing-card';
@@ -106,6 +108,22 @@ test('NotificationBell (FE-7, открытая панель с непрочит�
 
   await user.click(await screen.findByRole('button', { name: /непрочитанн/ }));
   await screen.findByText('Baxtiyor: Да, ещё в продаже');
+
+  expect(await axe(container, AXE_OPTIONS)).toHaveNoViolations();
+});
+
+test('ModerationQueue (FE-8, очередь с фрод-флагами) has no axe violations', async () => {
+  // Реальный мок-модуль (lib/mock/admin.ts): seed всегда непустой —
+  // ждём отрисовки первой строки очереди, чтобы не гонять axe по «Загружаем...».
+  const { container } = render(<ModerationQueue />);
+  await screen.findByText('Chevrolet Cobalt, 2019');
+
+  expect(await axe(container, AXE_OPTIONS)).toHaveNoViolations();
+});
+
+test('UsersTable (FE-8, таблица пользователей с действиями) has no axe violations', async () => {
+  const { container } = render(<UsersTable />);
+  await screen.findByText('Baxtiyor Alimov');
 
   expect(await axe(container, AXE_OPTIONS)).toHaveNoViolations();
 });
