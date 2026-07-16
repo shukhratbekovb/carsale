@@ -21,5 +21,16 @@ export function createOtpCodeSchema(t: ValidationTranslator) {
     .regex(new RegExp(`^\\d{${OTP_CODE_LENGTH}}$`), t('otpCode', { length: OTP_CODE_LENGTH }));
 }
 
+// Согласия при регистрации (FE-9, ЗРУ-547): базовое согласие на обработку ПД
+// обязательно (z.literal(true) — чекбокс нельзя оставить снятым), маркетинговое
+// — опциональный boolean, отзываемый позже через настройки профиля (PRD 7.2).
+export function createRegistrationConsentSchema(t: ValidationTranslator) {
+  return z.object({
+    personalDataConsent: z.literal(true, t('personalDataConsentRequired')),
+    marketingConsent: z.boolean(),
+  });
+}
+
 export type PhoneInput = z.infer<ReturnType<typeof createPhoneSchema>>;
 export type OtpCodeInput = z.infer<ReturnType<typeof createOtpCodeSchema>>;
+export type RegistrationConsentInput = z.infer<ReturnType<typeof createRegistrationConsentSchema>>;
