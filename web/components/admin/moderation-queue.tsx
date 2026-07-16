@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { FraudFlagBadge } from '@/components/admin/fraud-flag-badge';
-import { formatDateDdMmYyyy } from '@/components/admin/format-date';
+import { formatDateDdMmYyyy } from '@/lib/format';
 import { ModerationStatusBadge } from '@/components/admin/moderation-status-badge';
 import { Link } from '@/i18n/navigation';
 import { getCityDisplayName } from '@/lib/data/uz-cities';

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { formatDateDdMmYyyy } from '@/components/admin/format-date';
+import { formatDateDdMmYyyy } from '@/lib/format';
 import { UserStatusBadge } from '@/components/admin/user-status-badge';
 import { VerifiedBadge } from '@/components/domain/verified-badge';
 import { Button } from '@/components/ui/button';

@@ -42,7 +42,22 @@
     "typeListingStatus": "Mening eʼlonlarim holati"
   },
   "profile": {
-    "pageTitle": "Profil"
+    "pageTitle": "Profil",
+    "consentsTitle": "Roziliklar",
+    "personalDataAccepted": "Shaxsiy maʼlumotlarga ishlov berishga rozilik {date} kuni qabul qilingan.",
+    "personalDataNotGiven": "Shaxsiy maʼlumotlarga ishlov berishga rozilik hali berilmagan — u roʻyxatdan oʻtishda soʻraladi.",
+    "marketingConsentLabel": "Marketing bildirishnomalari",
+    "gdprTitle": "Mening maʼlumotlarim",
+    "exportHint": "Core API ulanmaguncha faqat shu qurilmadagi maʼlumotlar eksport qilinadi: saralanganlar, bildirishnoma sozlamalari, shahar va roziliklar.",
+    "exportButton": "Maʼlumotlarimni yuklab olish",
+    "exporting": "Fayl tayyorlanmoqda...",
+    "deleteButton": "Akkauntni oʻchirish",
+    "deleteConfirmWarning": "Akkauntni oʻchirish qaytarib boʻlmaydigan amal: eʼlonlar, suhbatlar, saralanganlar va sozlamalar oʻchiriladi.",
+    "deleteConfirmDueNote": "Soʻrov koʻpi bilan 15 ish kuni ichida koʻrib chiqiladi (OʻRQ-547, 19–22-moddalar).",
+    "deleteConfirm": "Oʻchirishni tasdiqlash",
+    "deleteCancel": "Bekor qilish",
+    "deleting": "Soʻrov yuborilmoqda...",
+    "deletionReceipt": "Soʻrov {requestedAt} kuni qabul qilindi va {dueBy} gacha koʻrib chiqiladi."
   },
   "admin": {
     "title": "Administrator paneli",
@@ -323,7 +338,9 @@
     "invalidCode": "Kod notoʻgʻri. Qolgan urinishlar: {attemptsRemaining}",
     "smsUnavailable": "SMS yuborib boʻlmadi, keyinroq urinib koʻring",
     "lockedTitle": "Urinishlar juda koʻp",
-    "lockedMessage": "{time} dan soʻng qayta urinib koʻring"
+    "lockedMessage": "{time} dan soʻng qayta urinib koʻring",
+    "personalDataConsentLabel": "Shaxsiy maʼlumotlarimga <privacyLink>Maxfiylik siyosati</privacyLink>ga muvofiq ishlov berilishiga roziman",
+    "marketingConsentLabel": "Marketing bildirishnomalarini olishga roziman"
   },
   "sell": {
     "pageTitle": "Eʼlon joylashtirish",
@@ -397,6 +414,67 @@
     "pricePositive": "Narx noldan katta boʻlishi kerak",
     "descriptionMax": "Tavsif {max} belgidan oshmasligi kerak",
     "photosMin": "Kamida bitta surat qoʻshing",
-    "photosMax": "Koʻpi bilan {max} ta surat"
+    "photosMax": "Koʻpi bilan {max} ta surat",
+    "personalDataConsentRequired": "Davom etish uchun shaxsiy maʼlumotlarga ishlov berishga rozilik zarur"
+  },
+  "privacy": {
+    "pageTitle": "Maxfiylik siyosati",
+    "draftNotice": "Qoralama: hujjat eʼlon qilinishidan oldin yuridik tekshiruvdan oʻtishi kerak.",
+    "sections": {
+      "dataCollected": {
+        "title": "Qanday maʼlumotlarni yigʻamiz",
+        "body": "Roʻyxatdan oʻtishdagi telefon raqami, joylashtirilgan eʼlonlar va boshqa foydalanuvchilar bilan yozishmalar mazmuni, servisdan foydalanish maʼlumotlari (saralanganlar, bildirishnoma sozlamalari, tanlangan shahar) hamda sayt ishlashi uchun zarur boʻlgan qurilmaning texnik maʼlumotlari."
+      },
+      "purposes": {
+        "title": "Ishlov berish maqsadlari",
+        "body": "Maʼlumotlar marketpleys ishlashi uchun qayta ishlanadi: SMS-kod orqali roʻyxatdan oʻtish va kirish, eʼlonlarni chop etish, xaridor va sotuvchini bogʻlash, moderatsiya va firibgarlikdan himoya, shuningdek foydalanuvchi sozlamalarda yoqqan bildirishnomalar uchun."
+      },
+      "storage": {
+        "title": "Maʼlumotlarni saqlash",
+        "body": "Oʻzbekiston Respublikasi fuqarolarining shaxsiy maʼlumotlari «Shaxsiy maʼlumotlar toʻgʻrisida»gi Qonunga (OʻRQ-547) muvofiq Oʻzbekiston Respublikasi hududida joylashgan serverlarda saqlanadi va qayta ishlanadi. Maʼlumotlar ishlov berish maqsadlari talab qilganidan uzoqroq saqlanmaydi."
+      },
+      "rights": {
+        "title": "Shaxsiy maʼlumotlar subyektining huquqlari",
+        "body": "Siz oʻz maʼlumotlaringizga kirish, ularning nusxasini yuklab olish (profildagi «Maʼlumotlarimni yuklab olish» tugmasi) va akkauntni oʻchirishni soʻrash huquqiga egasiz. Oʻchirish soʻrovi koʻpi bilan 15 ish kuni ichida koʻrib chiqiladi (OʻRQ-547, 19–22-moddalar)."
+      },
+      "withdrawal": {
+        "title": "Rozilikni qaytarib olish",
+        "body": "Marketing bildirishnomalariga rozilikni istalgan vaqtda profildagi «Roziliklar» boʻlimida qaytarib olish mumkin. Shaxsiy maʼlumotlarga ishlov berishga asosiy rozilikni qaytarib olish akkauntni oʻchirish soʻroviga teng."
+      },
+      "contact": {
+        "title": "Operator va aloqa",
+        "body": "Shaxsiy maʼlumotlar operatori — Carsale servisi. Shaxsiy maʼlumotlarga ishlov berish boʻyicha savollar uchun privacy@carsale.uz manziliga yozing."
+      }
+    }
+  },
+  "terms": {
+    "pageTitle": "Foydalanuvchi shartnomasi",
+    "draftNotice": "Qoralama: hujjat eʼlon qilinishidan oldin yuridik tekshiruvdan oʻtishi kerak.",
+    "sections": {
+      "service": {
+        "title": "Servis haqida",
+        "body": "Carsale — Oʻzbekistonda avtomobil oldi-sotdisi boʻyicha eʼlonlarni joylashtirish va qidirish uchun onlayn-maydon (marketpleys). Servis xaridor va sotuvchi oʻrtasidagi bitimning tarafi emas va ular oʻrtasidagi hisob-kitoblarda qatnashmaydi."
+      },
+      "listings": {
+        "title": "Eʼlonlar va mazmun uchun javobgarlik",
+        "body": "Sotuvchi avtomobil xususiyatlari, narxi, probegi va tavsifini mustaqil koʻrsatadi hamda ushbu maʼlumotlarning toʻgʻriligi uchun toʻliq javob beradi. Servis baholari (Deal Rating, probeg tekshiruvi) axborot xarakteriga ega va avtomobilni mustaqil tekshirish oʻrnini bosmaydi."
+      },
+      "prohibited": {
+        "title": "Taqiqlangan harakatlar",
+        "body": "Har qanday koʻrinishdagi firibgarlik, ataylab notoʻgʻri eʼlonlar chop etish, probegni oʻzgartirish, eʼlonlarni dublikat qilish, begona suratlardan foydalanish va moderatsiyani chetlab oʻtishga urinishlar taqiqlanadi. Buzilish eʼlonlar rad etilishi va akkaunt bloklanishiga olib keladi."
+      },
+      "moderation": {
+        "title": "Moderatsiya",
+        "body": "Eʼlonlar chop etilishidan oldin avtomatik va qoʻlda tekshiruvdan oʻtadi. Servis eʼlonni sababini koʻrsatgan holda rad etishi yoki buzilishlar aniqlanganda allaqachon chop etilgan eʼlonni olib tashlashi mumkin."
+      },
+      "paidServices": {
+        "title": "Pullik xizmatlar",
+        "body": "Ayrim xizmatlar (masalan, avtomobil tekshiruvi boʻyicha kengaytirilgan hisobot) pullik koʻrsatiladi. Toʻlov Click va Payme toʻlov tizimlari orqali amalga oshiriladi; servis bank kartalari maʼlumotlarini olmaydi va saqlamaydi."
+      },
+      "liability": {
+        "title": "Javobgarlikni cheklash",
+        "body": "Servis «boricha» taqdim etiladi. Carsale bitim tuzilishini kafolatlamaydi va foydalanuvchilarning platformadan tashqaridagi harakatlari uchun javob bermaydi, biroq moderatsiya va firibgarlikdan himoya choralarini koʻradi."
+      }
+    }
   }
 }
