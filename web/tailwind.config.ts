@@ -38,6 +38,15 @@ const config: Config = {
         },
         border: 'hsl(var(--border))',
         ring: 'hsl(var(--ring))',
+        // Статус-семантика (FE-8, бейджи админ-панели), контраст — см. globals.css
+        success: {
+          DEFAULT: 'hsl(var(--success))',
+          foreground: 'hsl(var(--success-foreground))',
+        },
+        warning: {
+          DEFAULT: 'hsl(var(--warning))',
+          foreground: 'hsl(var(--warning-foreground))',
+        },
         // Deal Rating — семантика зафиксирована в frontend-plan.md §6, контраст
         // проверен под WCAG 2.1 AA (>= 4.5:1 для белого текста, см. §2/FE-OQ-1)
         deal: {

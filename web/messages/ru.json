@@ -30,6 +30,10 @@
     "priceDropBody": "Цена на «{listingTitle}» снижена — посмотрите объявление",
     "listingStatusTitle": "Статус объявления",
     "listingStatusBody": "«{listingTitle}» отправлено на модерацию",
+    "listingApprovedTitle": "Объявление опубликовано",
+    "listingApprovedBody": "«{listingTitle}» прошло модерацию и опубликовано",
+    "listingRejectedTitle": "Объявление отклонено",
+    "listingRejectedBody": "«{listingTitle}» отклонено модератором. Причина: {reason}",
     "dismiss": "Закрыть",
     "preferencesTitle": "Уведомления",
     "preferencesHint": "Отключите типы уведомлений, которые не хотите получать. Доставляются по email и push (браузер).",
@@ -39,6 +43,91 @@
   },
   "profile": {
     "pageTitle": "Профиль"
+  },
+  "admin": {
+    "title": "Админ-панель",
+    "demoBanner": "Демо-режим: RBAC и сессии администратора появятся с Core API",
+    "tabsLabel": "Разделы админ-панели",
+    "tabs": {
+      "analytics": "Аналитика",
+      "moderation": "Модерация",
+      "users": "Пользователи"
+    },
+    "analytics": {
+      "heading": "Аналитика платформы",
+      "loading": "Загружаем аналитику...",
+      "totalListings": "Всего объявлений",
+      "activeListings": "Активных объявлений",
+      "pendingModeration": "На модерации",
+      "rejectedListings": "Отклонено",
+      "totalUsers": "Всего пользователей",
+      "activeUsers30d": "Активных за 30 дней (MAU)",
+      "newListings7d": "Новых объявлений за 7 дней",
+      "newUsers7d": "Новых пользователей за 7 дней"
+    },
+    "moderationStatus": {
+      "PENDING": "Ожидает решения",
+      "APPROVED": "Опубликовано",
+      "REJECTED": "Отклонено"
+    },
+    "fraudFlag": {
+      "DUPLICATE_PHOTOS": "Дубликат фото",
+      "PRICE_ANOMALY": "Аномальная цена −{percent}%"
+    },
+    "rejectReason": {
+      "DUPLICATE": "Дубликат объявления",
+      "FRAUD_PRICE": "Мошенническая цена",
+      "MISLEADING_INFO": "Недостоверная информация",
+      "OTHER": "Другая причина"
+    },
+    "moderation": {
+      "heading": "Очередь модерации",
+      "loading": "Загружаем очередь...",
+      "emptyTitle": "Очередь модерации пуста",
+      "emptyMessage": "Новые фрод-флаги появятся здесь автоматически.",
+      "flaggedAt": "Флаг от {date}",
+      "backToQueue": "← К очереди модерации",
+      "listingTitle": "Объявление",
+      "descriptionTitle": "Описание",
+      "flagTitle": "Причина флага",
+      "duplicateHint": "Фотографии совпадают с уже опубликованным объявлением.",
+      "duplicateLink": "Открыть объявление-оригинал",
+      "anomalyHint": "Цена на {percent}% ниже рыночной оценки для аналогичных автомобилей.",
+      "recommendedRange": "Рекомендованный диапазон: {min} – {max}",
+      "sellerTitle": "Продавец",
+      "sellerRegisteredAt": "Дата регистрации",
+      "sellerActiveListings": "Активных объявлений",
+      "sellerPreviousRejections": "Прошлых отклонений",
+      "approve": "Опубликовать",
+      "reject": "Отклонить",
+      "rejectReasonLabel": "Причина отклонения",
+      "rejectReasonPlaceholder": "Выберите причину",
+      "rejectCommentLabel": "Комментарий (необязательно)",
+      "rejectSubmit": "Подтвердить отклонение",
+      "rejectCancel": "Отмена",
+      "decisionTitle": "Решение",
+      "decidedAt": "Решение от {date}",
+      "decisionReason": "Причина",
+      "decisionComment": "Комментарий"
+    },
+    "userStatus": {
+      "ACTIVE": "Активен",
+      "SUSPENDED": "Заморожен",
+      "BANNED": "Забанен"
+    },
+    "users": {
+      "heading": "Пользователи",
+      "loading": "Загружаем пользователей...",
+      "colUser": "Пользователь",
+      "colPhone": "Телефон",
+      "colRegisteredAt": "Регистрация",
+      "colListings": "Объявления",
+      "colStatus": "Статус",
+      "colActions": "Действия",
+      "suspend": "Заморозить",
+      "ban": "Забанить",
+      "restore": "Разблокировать"
+    }
   },
   "chat": {
     "pageTitle": "Сообщения",
@@ -97,7 +186,8 @@
   },
   "footer": {
     "privacy": "Политика конфиденциальности",
-    "terms": "Пользовательское соглашение"
+    "terms": "Пользовательское соглашение",
+    "admin": "Админ-панель"
   },
   "locationPicker": {
     "searchPlaceholder": "Город, область",

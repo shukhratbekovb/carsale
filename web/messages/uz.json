@@ -30,6 +30,10 @@
     "priceDropBody": "«{listingTitle}» narxi pasaytirildi — eʼlonni koʻring",
     "listingStatusTitle": "Eʼlon holati",
     "listingStatusBody": "«{listingTitle}» moderatsiyaga yuborildi",
+    "listingApprovedTitle": "Eʼlon chop etildi",
+    "listingApprovedBody": "«{listingTitle}» moderatsiyadan oʻtdi va chop etildi",
+    "listingRejectedTitle": "Eʼlon rad etildi",
+    "listingRejectedBody": "«{listingTitle}» moderator tomonidan rad etildi. Sababi: {reason}",
     "dismiss": "Yopish",
     "preferencesTitle": "Bildirishnomalar",
     "preferencesHint": "Kerak boʻlmagan bildirishnoma turlarini oʻchiring. Email va push (brauzer) orqali yetkaziladi.",
@@ -39,6 +43,91 @@
   },
   "profile": {
     "pageTitle": "Profil"
+  },
+  "admin": {
+    "title": "Administrator paneli",
+    "demoBanner": "Demo-rejim: administrator RBAC va sessiyalari Core API bilan birga qoʻshiladi",
+    "tabsLabel": "Administrator paneli boʻlimlari",
+    "tabs": {
+      "analytics": "Analitika",
+      "moderation": "Moderatsiya",
+      "users": "Foydalanuvchilar"
+    },
+    "analytics": {
+      "heading": "Platforma analitikasi",
+      "loading": "Analitika yuklanmoqda...",
+      "totalListings": "Jami eʼlonlar",
+      "activeListings": "Faol eʼlonlar",
+      "pendingModeration": "Moderatsiyada",
+      "rejectedListings": "Rad etilgan",
+      "totalUsers": "Jami foydalanuvchilar",
+      "activeUsers30d": "30 kunlik faollar (MAU)",
+      "newListings7d": "7 kunda yangi eʼlonlar",
+      "newUsers7d": "7 kunda yangi foydalanuvchilar"
+    },
+    "moderationStatus": {
+      "PENDING": "Qaror kutilmoqda",
+      "APPROVED": "Chop etilgan",
+      "REJECTED": "Rad etilgan"
+    },
+    "fraudFlag": {
+      "DUPLICATE_PHOTOS": "Surat dublikati",
+      "PRICE_ANOMALY": "Anomal narx −{percent}%"
+    },
+    "rejectReason": {
+      "DUPLICATE": "Eʼlon dublikati",
+      "FRAUD_PRICE": "Firibgarlik narxi",
+      "MISLEADING_INFO": "Notoʻgʻri maʼlumot",
+      "OTHER": "Boshqa sabab"
+    },
+    "moderation": {
+      "heading": "Moderatsiya navbati",
+      "loading": "Navbat yuklanmoqda...",
+      "emptyTitle": "Moderatsiya navbati boʻsh",
+      "emptyMessage": "Yangi frod-flaglar bu yerda avtomatik paydo boʻladi.",
+      "flaggedAt": "Flag sanasi: {date}",
+      "backToQueue": "← Moderatsiya navbatiga",
+      "listingTitle": "Eʼlon",
+      "descriptionTitle": "Tavsif",
+      "flagTitle": "Flag sababi",
+      "duplicateHint": "Suratlar allaqachon chop etilgan eʼlon bilan mos keladi.",
+      "duplicateLink": "Asl eʼlonni ochish",
+      "anomalyHint": "Narx oʻxshash avtomobillarning bozor bahosidan {percent}% past.",
+      "recommendedRange": "Tavsiya etilgan oraliq: {min} – {max}",
+      "sellerTitle": "Sotuvchi",
+      "sellerRegisteredAt": "Roʻyxatdan oʻtgan sana",
+      "sellerActiveListings": "Faol eʼlonlar",
+      "sellerPreviousRejections": "Avvalgi rad etishlar",
+      "approve": "Chop etish",
+      "reject": "Rad etish",
+      "rejectReasonLabel": "Rad etish sababi",
+      "rejectReasonPlaceholder": "Sababni tanlang",
+      "rejectCommentLabel": "Izoh (majburiy emas)",
+      "rejectSubmit": "Rad etishni tasdiqlash",
+      "rejectCancel": "Bekor qilish",
+      "decisionTitle": "Qaror",
+      "decidedAt": "Qaror sanasi: {date}",
+      "decisionReason": "Sabab",
+      "decisionComment": "Izoh"
+    },
+    "userStatus": {
+      "ACTIVE": "Faol",
+      "SUSPENDED": "Muzlatilgan",
+      "BANNED": "Bloklangan"
+    },
+    "users": {
+      "heading": "Foydalanuvchilar",
+      "loading": "Foydalanuvchilar yuklanmoqda...",
+      "colUser": "Foydalanuvchi",
+      "colPhone": "Telefon",
+      "colRegisteredAt": "Roʻyxatdan oʻtish",
+      "colListings": "Eʼlonlar",
+      "colStatus": "Holat",
+      "colActions": "Amallar",
+      "suspend": "Muzlatish",
+      "ban": "Bloklash",
+      "restore": "Blokdan chiqarish"
+    }
   },
   "chat": {
     "pageTitle": "Xabarlar",
@@ -97,7 +186,8 @@
   },
   "footer": {
     "privacy": "Maxfiylik siyosati",
-    "terms": "Foydalanuvchi shartnomasi"
+    "terms": "Foydalanuvchi shartnomasi",
+    "admin": "Administrator paneli"
   },
   "locationPicker": {
     "searchPlaceholder": "Shahar, viloyat",

@@ -34,6 +34,14 @@
     --deal-fair-foreground: 0 0% 100%;
     --deal-overpriced: 0 74% 42%;
     --deal-overpriced-foreground: 0 0% 100%;
+
+    /* Семантические статус-токены (FE-8, бейджи админ-панели): success — тот же
+       зелёный тон, что --deal-great (контраст с белым ~5:1, проверен для Deal
+       Rating), warning — тёмный янтарный (~7:1 с белым, WCAG 2.1 AA >= 4.5:1). */
+    --success: 142 72% 29%;
+    --success-foreground: 0 0% 100%;
+    --warning: 23 83% 31%;
+    --warning-foreground: 0 0% 100%;
   }
 
   .dark {

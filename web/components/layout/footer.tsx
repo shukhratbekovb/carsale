@@ -15,6 +15,11 @@ export function Footer() {
           <Link href="/terms" className="hover:text-foreground">
             {t('terms')}
           </Link>
+          {/* Админка сознательно не в шапке: не публичная навигация,
+              неприметная ссылка для демо (FE-8) */}
+          <Link href="/admin" className="hover:text-foreground">
+            {t('admin')}
+          </Link>
         </nav>
       </div>
     </footer>
