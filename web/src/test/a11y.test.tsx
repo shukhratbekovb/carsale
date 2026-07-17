@@ -5,6 +5,7 @@ import { expect, test, vi } from 'vitest';
 import { render, screen, waitFor } from '@/src/test/utils';
 import { ModerationQueue } from '@/components/admin/moderation-queue';
 import { UsersTable } from '@/components/admin/users-table';
+import { PhoneForm } from '@/components/auth/phone-form';
 import { CatalogFilters } from '@/components/catalog/catalog-filters';
 import { ChatWindow } from '@/components/chat/chat-window';
 import { ListingCard } from '@/components/domain/listing-card';
@@ -12,6 +13,7 @@ import { Footer } from '@/components/layout/footer';
 import { Header } from '@/components/layout/header';
 import { NotificationBell } from '@/components/notifications/notification-bell';
 import { GatewaySelect } from '@/components/payment/gateway-select';
+import { GdprSection } from '@/components/profile/gdpr-section';
 import { VehicleDetailsStep } from '@/components/sell/vehicle-details-step';
 import { mockListings } from '@/lib/mock/listings';
 import { createInitialDraftState } from '@/lib/sell/wizard-flow';
@@ -124,6 +126,23 @@ test('ModerationQueue (FE-8, очередь с фрод-флагами) has no a
 test('UsersTable (FE-8, таблица пользователей с действиями) has no axe violations', async () => {
   const { container } = render(<UsersTable />);
   await screen.findByText('Baxtiyor Alimov');
+
+  expect(await axe(container, AXE_OPTIONS)).toHaveNoViolations();
+});
+
+test('PhoneForm (FE-9, чекбоксы согласий при регистрации) has no axe violations', async () => {
+  const { container } = render(<PhoneForm />);
+  expect(await axe(container, AXE_OPTIONS)).toHaveNoViolations();
+});
+
+test('GdprSection (FE-9, раскрытое подтверждение удаления) has no axe violations', async () => {
+  const user = userEvent.setup();
+  const { container } = render(<GdprSection />);
+
+  // Раскрываем деструктивное inline-подтверждение — самое насыщенное
+  // состояние секции (предупреждение + срок + пара кнопок).
+  await user.click(screen.getByRole('button', { name: 'Удалить аккаунт' }));
+  await screen.findByText(/15 рабочих дней/);
 
   expect(await axe(container, AXE_OPTIONS)).toHaveNoViolations();
 });
