@@ -1,11 +1,12 @@
 import { expect, test } from '@playwright/test';
+import { gotoHydrated } from './utils';
 
 // P0-флоу «Оплата» (analysis/06-sequence-diagrams.md §6.5, FR-10/UC-11, риск
 // R-10): выбор шлюза → redirect на имитацию чекаута → return-страница; отказ →
 // fallback на второй шлюз → терминальное «оба недоступны».
 
 test('оплата: happy path через Click (§6.5)', async ({ page }) => {
-  await page.goto('/ru/catalog/1');
+  await gotoHydrated(page, '/ru/catalog/1');
   await page.getByRole('link', { name: /Заказать расширенный отчёт о проверке/ }).click();
 
   await expect(page).toHaveURL(/\/ru\/payment\/1/);
@@ -21,7 +22,7 @@ test('оплата: happy path через Click (§6.5)', async ({ page }) => {
 });
 
 test('оплата: отказ шлюза → fallback на второй → оба недоступны (R-10)', async ({ page }) => {
-  await page.goto('/ru/payment/1');
+  await gotoHydrated(page, '/ru/payment/1');
   await page.getByRole('button', { name: 'Click', exact: true }).click();
 
   await expect(page).toHaveURL(/gateway-sim/);

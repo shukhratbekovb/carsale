@@ -22,7 +22,9 @@ export default defineConfig({
   // Ретраи только в CI: локальные падения должны быть видны сразу, а не
   // маскироваться повтором.
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 2 : undefined,
+  // Локально не больше 4 воркеров: все проекты бьют в один dev-сервер, и
+  // компиляция маршрутов на лету под полной матрицей давала таймауты.
+  workers: process.env.CI ? 2 : 4,
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
   use: {
     baseURL: BASE_URL,

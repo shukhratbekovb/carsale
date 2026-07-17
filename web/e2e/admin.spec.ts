@@ -1,11 +1,12 @@
 import { expect, test } from '@playwright/test';
+import { gotoHydrated } from './utils';
 
 // P0-флоу «Модерация» (UC-15, P0 в analysis/03-use-case-model.md) и
 // «Управление пользователями» (UC-16). Состояние мок-«базы» админки живёт
 // in-memory на загруженной странице — каждый тест стартует со свежего seed.
 
 test('модерация: отклонение с обязательной причиной (UC-15 шаг 4)', async ({ page }) => {
-  await page.goto('/ru/admin/moderation');
+  await gotoHydrated(page, '/ru/admin/moderation');
   await expect(page.getByRole('heading', { name: 'Очередь модерации' })).toBeVisible();
 
   // Очередь PENDING «сначала старые» — первый элемент это mod-1 (12.07).
@@ -32,7 +33,7 @@ test('модерация: отклонение с обязательной пр�
 });
 
 test('модерация: публикация снимает флаг (UC-15 шаг 4)', async ({ page }) => {
-  await page.goto('/ru/admin/moderation/mod-2');
+  await gotoHydrated(page, '/ru/admin/moderation/mod-2');
   await expect(page.getByRole('heading', { name: 'Chevrolet Gentra, 2022' })).toBeVisible();
   // Аномальная цена: показан процент отклонения.
   await expect(page.getByText(/ниже рыночной оценки/)).toBeVisible();
@@ -43,7 +44,7 @@ test('модерация: публикация снимает флаг (UC-15 ш
 });
 
 test('пользователи: ban и restore обновляют строку без перезагрузки (UC-16)', async ({ page }) => {
-  await page.goto('/ru/admin/users');
+  await gotoHydrated(page, '/ru/admin/users');
   await expect(page.getByRole('heading', { name: 'Пользователи' })).toBeVisible();
 
   const row = page.getByRole('row', { name: /Otabek Ergashev/ });

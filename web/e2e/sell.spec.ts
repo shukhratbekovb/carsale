@@ -1,5 +1,6 @@
 import path from 'path';
 import { expect, test } from '@playwright/test';
+import { gotoHydrated, proveHydrated } from './utils';
 
 // P0-флоу «Размещение объявления» (analysis/06-sequence-diagrams.md §6.2):
 // 4 шага мастера от характеристик до экрана «на модерации», включая загрузку
@@ -8,8 +9,11 @@ import { expect, test } from '@playwright/test';
 const FIXTURE_PHOTO = path.join(__dirname, 'fixtures', 'car.png');
 
 test('мастер размещения: полный happy path до экрана модерации (§6.2)', async ({ page }) => {
-  await page.goto('/ru/sell/new');
+  await gotoHydrated(page, '/ru/sell/new');
   await expect(page.getByRole('heading', { name: 'Разместить объявление' })).toBeVisible();
+  // Сабмит пустой формы → валидационная ошибка = гидратация завершена,
+  // ввод больше не потеряется (см. proveHydrated).
+  await proveHydrated(page, { role: 'button', name: 'Далее' }, 'Укажите марку');
 
   // Шаг 1 — характеристики.
   await page.getByLabel('Марка').fill('Chevrolet');
@@ -43,7 +47,8 @@ test('мастер размещения: полный happy path до экран
 });
 
 test('мастер: шаг фото не пропускается без фото (FR-02 AC)', async ({ page }) => {
-  await page.goto('/ru/sell/new');
+  await gotoHydrated(page, '/ru/sell/new');
+  await proveHydrated(page, { role: 'button', name: 'Далее' }, 'Укажите марку');
 
   await page.getByLabel('Марка').fill('Chevrolet');
   await page.getByLabel('Модель').fill('Nexia 3');

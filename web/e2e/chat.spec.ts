@@ -1,11 +1,12 @@
 import { expect, test } from '@playwright/test';
+import { gotoHydrated } from './utils';
 
 // P0-флоу «Чат» (analysis/06-sequence-diagrams.md §6.4, UC-06): вход с карточки
 // объявления, отправка сообщения, real-time ответ «продавца» (детерминированный
 // мок pub/sub вместо будущего WebSocket Hub).
 
 test('чат: сообщение с карточки объявления и авто-ответ продавца (§6.4)', async ({ page }) => {
-  await page.goto('/ru/catalog/1');
+  await gotoHydrated(page, '/ru/catalog/1');
   await page.getByRole('button', { name: 'Написать продавцу' }).click();
 
   await expect(page).toHaveURL(/\/ru\/chat\//);
@@ -29,7 +30,7 @@ test('чат: сообщение с карточки объявления и а�
 test('inbox: новый тред появляется в списке после первого сообщения', async ({ page }) => {
   // Listing 2 НЕ имеет засеянного треда (в отличие от listing 1) — проверяем
   // именно создание нового треда (UC-06: «найти/создать ChatThread»).
-  await page.goto('/ru/catalog/2');
+  await gotoHydrated(page, '/ru/catalog/2');
   await page.getByRole('button', { name: 'Написать продавцу' }).click();
   await expect(page).toHaveURL(/\/ru\/chat\//);
 

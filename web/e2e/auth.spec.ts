@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { gotoHydrated, proveHydrated } from './utils';
 
 // P0-флоу «Регистрация/вход по OTP» (analysis/06-sequence-diagrams.md §6.1,
 // включая error-ветку неверного кода) + согласия NFR-20 (FE-9).
@@ -7,7 +8,7 @@ import { expect, test } from '@playwright/test';
 const PHONE = '+998901234567';
 
 test('вход: без согласия на обработку ПД сабмит блокируется (NFR-20)', async ({ page }) => {
-  await page.goto('/ru/auth/login');
+  await gotoHydrated(page, '/ru/auth/login');
   await page.getByLabel('Номер телефона').fill(PHONE);
   await page.getByRole('button', { name: 'Получить код' }).click();
 
@@ -18,7 +19,9 @@ test('вход: без согласия на обработку ПД сабми�
 });
 
 test('вход: ошибка кода уменьшает попытки, верный код завершает вход (§6.1)', async ({ page }) => {
-  await page.goto('/ru/auth/login');
+  await gotoHydrated(page, '/ru/auth/login');
+  // Сабмит пустой формы → ошибка формата телефона = гидратация завершена.
+  await proveHydrated(page, { role: 'button', name: 'Получить код' }, 'Введите номер в формате');
   await page.getByLabel('Номер телефона').fill(PHONE);
   await page.getByRole('checkbox', { name: /Соглашаюсь на обработку персональных данных/ }).check();
   await page.getByRole('button', { name: 'Получить код' }).click();
