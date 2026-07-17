@@ -11,7 +11,11 @@ import '../globals.css';
 
 // latin-подмножество Inter включает U+02BB/U+02BC (oʻ, gʻ, eʼlon) — глифы
 // узбекской латиницы покрыты, отдельный шрифт не нужен (риск FE-R-3).
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+// cyrillic обязателен для RU-локали: без него весь русский текст падал в
+// системный fallback (Segoe UI на Windows, ЗАМЕТНО более широкий DejaVu Sans
+// на Linux) — типографика RU расходилась с UZ, а вьюпорт-тесты NFR-24
+// проходили локально и падали на CI с переполнением ровно в разницу метрик.
+const inter = Inter({ subsets: ['latin', 'cyrillic'], variable: '--font-inter' });
 
 interface LocaleLayoutProps {
   children: React.ReactNode;

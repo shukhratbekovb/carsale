@@ -15,12 +15,27 @@ for (const width of WIDTHS) {
       // Дать layout'у стабилизироваться (шрифты/изображения меняют ширину).
       await page.waitForLoadState('networkidle');
 
-      const overflow = await page.evaluate(() => {
+      const { overflow, offenders } = await page.evaluate(() => {
         const el = document.documentElement;
-        return el.scrollWidth - el.clientWidth;
+        const wide: string[] = [];
+        // Диагностика для падений на CI: какие элементы выходят за вьюпорт —
+        // из одного числа переполнения виновника не восстановить.
+        document.querySelectorAll('*').forEach((node) => {
+          const r = node.getBoundingClientRect();
+          if (r.right > el.clientWidth + 1 || r.left < -1) {
+            const cls = typeof node.className === 'string' ? node.className : '';
+            wide.push(
+              `<${node.tagName.toLowerCase()} class="${cls.slice(0, 80)}"> [${Math.round(r.left)}..${Math.round(r.right)}]`
+            );
+          }
+        });
+        return { overflow: el.scrollWidth - el.clientWidth, offenders: wide.slice(0, 6) };
       });
       // 1px допуска на субпиксельное округление браузера.
-      expect(overflow, `scrollWidth превышает clientWidth на ${overflow}px`).toBeLessThanOrEqual(1);
+      expect(
+        overflow,
+        `scrollWidth превышает clientWidth на ${overflow}px; элементы за вьюпортом:\n${offenders.join('\n')}`
+      ).toBeLessThanOrEqual(1);
     });
   }
 }
