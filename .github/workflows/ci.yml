@@ -53,5 +53,24 @@ jobs:
       - name: Bundle size budget
         run: npm run bundlewatch
 
+      # playwright-smoke — последний гейт из frontend-plan.md §4. В CI гоняется
+      # только chromium (гейт = P0-флоу + живой axe + вьюпорты); полная
+      # кросс-браузерная матрица (firefox/webkit, NFR-23) — локальный
+      # `npm run e2e:all`. webServer Playwright'а сам стартует production-сервер
+      # (`next start`) из уже собранного .next/ (шаг build выше).
+      - name: Install Playwright chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Playwright smoke (P0 flows, live axe, viewports)
+        run: npm run e2e
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: web/playwright-report
+          retention-days: 7
+
       - name: Lighthouse CI (performance/a11y/SEO)
         run: npm run lighthouse
