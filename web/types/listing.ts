@@ -39,6 +39,11 @@ export interface Listing {
   engineVolume?: number;
   fuelType?: FuelType;
   description?: string;
+  // Обложка объявления. Опциональное: объявление без фото — легальное состояние,
+  // UI показывает плейсхолдер. В реальной модели LISTING_PHOTO — отдельная сущность
+  // с массивом фото и блюр-версиями (analysis/08-data-model.md); для фронт-моков
+  // достаточно одной обложки.
+  photoUrl?: string;
   dealRating: DealRating;
   mileageFlag: boolean;
   mileageFlagReason?: string;

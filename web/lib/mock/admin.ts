@@ -43,6 +43,9 @@ function seedModerationItems(): ModerationItem[] {
         engineVolume: 1.5,
         fuelType: 'PETROL',
         description: 'Срочно продаю, один хозяин, состояние отличное. Звоните в любое время.',
+        // Тот же файл, что у объявления '1': визуально демонстрирует «дубль фото» (UC-15) —
+        // модератор в демо видит одинаковую обложку у оригинала и флагнутого снапшота.
+        photoUrl: '/listings/1.jpg',
         dealRating: { label: 'FAIR_PRICE', recommendedMin: 90000000, recommendedMax: 105000000 },
         mileageFlag: false,
         sellerVerified: false,
@@ -78,6 +81,7 @@ function seedModerationItems(): ModerationItem[] {
         engineVolume: 1.5,
         fuelType: 'PETROL',
         description: 'Отдаю дёшево, нужны деньги срочно. Предоплата на карту — забронирую за вами.',
+        photoUrl: '/listings/5.jpg',
         // Подозрительно низкая цена: рейтинг «слишком хорошо, чтобы быть правдой».
         dealRating: { label: 'GREAT_DEAL', recommendedMin: 118000000, recommendedMax: 130000000 },
         mileageFlag: false,
@@ -113,6 +117,8 @@ function seedModerationItems(): ModerationItem[] {
         engineVolume: 1.5,
         fuelType: 'PETROL',
         description: 'Почти новая, пробег минимальный. Торг у капота.',
+        // Тот же файл, что у объявления '3' — см. комментарий у mod-1 про дубль фото.
+        photoUrl: '/listings/3.jpg',
         dealRating: { label: 'FAIR_PRICE', recommendedMin: 96000000, recommendedMax: 110000000 },
         mileageFlag: false,
         sellerVerified: false,
@@ -148,6 +154,7 @@ function seedModerationItems(): ModerationItem[] {
         engineVolume: 2.0,
         fuelType: 'PETROL',
         description: 'Уезжаю за границу, продаю за полцены. Пишите только в мессенджер.',
+        photoUrl: '/listings/9.jpg',
         // Настолько низкая цена, что модель не даёт уверенной оценки.
         dealRating: { label: 'UNAVAILABLE' },
         mileageFlag: true,
@@ -184,6 +191,7 @@ function seedModerationItems(): ModerationItem[] {
         engineVolume: 1.2,
         fuelType: 'PETROL',
         description: 'Машина на гарантии, продаю ниже рынка из-за переезда.',
+        photoUrl: '/listings/13.jpg',
         dealRating: { label: 'GREAT_DEAL', recommendedMin: 160000000, recommendedMax: 175000000 },
         mileageFlag: false,
         sellerVerified: true,
