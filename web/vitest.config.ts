@@ -8,6 +8,9 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     css: true,
+    // e2e/ — Playwright-сьюты (*.spec.ts), у них свой раннер (playwright.config.ts);
+    // дефолтный include vitest иначе подхватил бы их как unit-тесты.
+    exclude: ['**/node_modules/**', '**/.next/**', 'e2e/**'],
     setupFiles: ['./src/test/setup.ts'],
     server: {
       deps: {

@@ -30,6 +30,8 @@ Thumbs.db
 # Testing
 coverage/
 .lighthouseci/
+test-results/
+playwright-report/
 
 # TypeScript
 *.tsbuildinfo
