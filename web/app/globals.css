@@ -20,7 +20,12 @@
     --muted-foreground: 215.4 16.3% 44%;
     --accent: 210 40% 96.1%;
     --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
+    /* 50.6% вместо изначальных 60.2% — пара destructive/destructive-foreground
+       (бейджи REJECTED/BANNED, destructive-кнопки, счётчик NotificationBell)
+       давала контраст ~3.8:1, ниже WCAG AA 4.5:1 для мелкого текста (замечено
+       при постройке admin-панели; тот же класс фикса, что у --muted-foreground
+       выше). 50.6% (red-600) даёт ~4.6:1. */
+    --destructive: 0 72.2% 50.6%;
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
