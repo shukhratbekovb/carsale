@@ -7,6 +7,7 @@ import { formatDateDdMmYyyy } from '@/lib/format';
 import { ModerationStatusBadge } from '@/components/admin/moderation-status-badge';
 import { RejectForm } from '@/components/admin/reject-form';
 import { DealRatingBadge } from '@/components/domain/deal-rating-badge';
+import { ListingPhoto } from '@/components/domain/listing-photo';
 import { MileageFlag } from '@/components/domain/mileage-flag';
 import { VerifiedBadge } from '@/components/domain/verified-badge';
 import { Button } from '@/components/ui/button';
@@ -119,6 +120,17 @@ export function ModerationDetail({ item, onDecided }: ModerationDetailProps) {
               <CardTitle className="text-lg">{t('listingTitle')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Обложка из снапшота объявления. Для DUPLICATE_PHOTOS файл
+                  совпадает с объявлением-оригиналом — это ожидаемо и служит
+                  визуальным доказательством дубля. */}
+              {listing.photoUrl && (
+                <ListingPhoto
+                  photoUrl={listing.photoUrl}
+                  alt={listingTitle}
+                  sizes="(max-width: 640px) 100vw, 448px"
+                  className="aspect-video w-full max-w-md rounded-md"
+                />
+              )}
               <div className="flex flex-wrap items-center gap-3">
                 <p className="text-2xl font-bold">{formatUzs(listing.priceUzs, locale)}</p>
                 <DealRatingBadge label={listing.dealRating.label} />

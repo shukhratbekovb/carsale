@@ -1,7 +1,7 @@
 import { useLocale } from 'next-intl';
 import { DealRatingBadge } from '@/components/domain/deal-rating-badge';
 import { FavoriteButton } from '@/components/domain/favorite-button';
-import { ListingPhotoPlaceholder } from '@/components/domain/listing-photo-placeholder';
+import { ListingPhoto } from '@/components/domain/listing-photo';
 import { MileageFlag } from '@/components/domain/mileage-flag';
 import { VerifiedBadge } from '@/components/domain/verified-badge';
 import { Link } from '@/i18n/navigation';
@@ -14,7 +14,9 @@ import type { Listing } from '@/types/listing';
 //
 // Бейджи с MileageFlag/FavoriteButton (интерактивные элементы) намеренно
 // вынесены за пределы <Link>, чтобы не вкладывать их внутрь <a> (невалидный HTML).
-export function ListingCard({ listing }: { listing: Listing }) {
+// priority — только для LCP-кандидата (первая карточка грида каталога),
+// массово priority у карточек ломал бы приоритизацию загрузки.
+export function ListingCard({ listing, priority = false }: { listing: Listing; priority?: boolean }) {
   const locale = useLocale();
 
   return (
@@ -25,7 +27,15 @@ export function ListingCard({ listing }: { listing: Listing }) {
         className="absolute right-3 top-3 z-10"
       />
       <Link href={`/catalog/${listing.id}`} className="block">
-        <ListingPhotoPlaceholder className="aspect-[4/3] w-full" />
+        {/* sizes повторяет гриды карточек (1 колонка → sm:2 → xl:3–4 при
+            контейнере max-w-7xl): на xl колонка не шире ~410px. */}
+        <ListingPhoto
+          photoUrl={listing.photoUrl}
+          alt={`${listing.make} ${listing.model}, ${listing.year}`}
+          sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 410px"
+          priority={priority}
+          className="aspect-[4/3] w-full"
+        />
         <div className="space-y-2 p-4 pb-0">
           <div className="flex items-start justify-between gap-2">
             {/* h2, не h3: карточка используется сразу после <h1> без промежуточного

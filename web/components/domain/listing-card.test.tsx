@@ -36,6 +36,23 @@ test('omits the mileage flag when the listing has no flag', () => {
   expect(screen.queryByText('Пробег требует проверки')).not.toBeInTheDocument();
 });
 
+test('renders the cover photo with a meaningful alt when photoUrl is present', () => {
+  render(<ListingCard listing={flaggedListing} />);
+
+  expect(
+    screen.getByAltText(`${flaggedListing.make} ${flaggedListing.model}, ${flaggedListing.year}`)
+  ).toBeInTheDocument();
+  expect(screen.queryByLabelText('Фото объявления недоступно')).not.toBeInTheDocument();
+});
+
+test('falls back to the photo placeholder when the listing has no photoUrl', () => {
+  // Объявление без фото — легальное состояние (Listing.photoUrl опционален).
+  const { photoUrl: _photoUrl, ...withoutPhoto } = flaggedListing;
+  render(<ListingCard listing={withoutPhoto} />);
+
+  expect(screen.getByLabelText('Фото объявления недоступно')).toBeInTheDocument();
+});
+
 test('links to the listing detail page', () => {
   render(<ListingCard listing={flaggedListing} />);
   const links = screen.getAllByRole('link');

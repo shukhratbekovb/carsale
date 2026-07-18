@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { FraudFlagBadge } from '@/components/admin/fraud-flag-badge';
 import { formatDateDdMmYyyy } from '@/lib/format';
 import { ModerationStatusBadge } from '@/components/admin/moderation-status-badge';
+import { ListingPhoto } from '@/components/domain/listing-photo';
 import { Link } from '@/i18n/navigation';
 import { getCityDisplayName } from '@/lib/data/uz-cities';
 import { formatUzs } from '@/lib/format';
@@ -56,15 +57,26 @@ export function ModerationQueue() {
                 resolved && 'opacity-60'
               )}
             >
-              <div className="min-w-0">
-                <p className="font-medium">
-                  {item.listing.make} {item.listing.model}, {item.listing.year}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {formatUzs(item.listing.priceUzs, locale)} ·{' '}
-                  {getCityDisplayName(item.listing.city, locale)} ·{' '}
-                  {t('flaggedAt', { date: formatDateDdMmYyyy(item.flaggedAt) })}
-                </p>
+              <div className="flex min-w-0 items-center gap-3">
+                {/* Превью-тамбнейл фиксированного размера (w-20 = 80px) — sizes константный. */}
+                {item.listing.photoUrl && (
+                  <ListingPhoto
+                    photoUrl={item.listing.photoUrl}
+                    alt={`${item.listing.make} ${item.listing.model}, ${item.listing.year}`}
+                    sizes="80px"
+                    className="h-14 w-20 shrink-0 rounded-md"
+                  />
+                )}
+                <div className="min-w-0">
+                  <p className="font-medium">
+                    {item.listing.make} {item.listing.model}, {item.listing.year}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {formatUzs(item.listing.priceUzs, locale)} ·{' '}
+                    {getCityDisplayName(item.listing.city, locale)} ·{' '}
+                    {t('flaggedAt', { date: formatDateDdMmYyyy(item.flaggedAt) })}
+                  </p>
+                </div>
               </div>
               <div className="flex shrink-0 flex-wrap items-center gap-2">
                 <FraudFlagBadge flag={item.fraudFlag} />

@@ -5,7 +5,7 @@ import { getTranslations } from 'next-intl/server';
 import { MessageSellerButton } from '@/components/chat/message-seller-button';
 import { DealRatingBadge } from '@/components/domain/deal-rating-badge';
 import { FavoriteButton } from '@/components/domain/favorite-button';
-import { ListingPhotoPlaceholder } from '@/components/domain/listing-photo-placeholder';
+import { ListingPhoto } from '@/components/domain/listing-photo';
 import { MileageFlag } from '@/components/domain/mileage-flag';
 import { VerifiedBadge } from '@/components/domain/verified-badge';
 import { Link } from '@/i18n/navigation';
@@ -85,7 +85,15 @@ export default function ListingPage({ params }: ListingPageProps) {
               listingTitle={`${listing.make} ${listing.model}, ${listing.year}`}
               className="absolute right-3 top-3 z-10"
             />
-            <ListingPhotoPlaceholder className="aspect-video w-full rounded-lg" />
+            {/* Hero-обложка — LCP страницы, поэтому priority. sizes: колонка
+                lg:col-span-2 занимает ~2/3 контейнера max-w-7xl. */}
+            <ListingPhoto
+              photoUrl={listing.photoUrl}
+              alt={`${listing.make} ${listing.model}, ${listing.year}`}
+              sizes="(max-width: 1024px) 100vw, 66vw"
+              priority
+              className="aspect-video w-full rounded-lg"
+            />
           </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-2">

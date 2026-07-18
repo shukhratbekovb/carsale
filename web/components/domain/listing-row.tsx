@@ -1,7 +1,7 @@
 import { useLocale } from 'next-intl';
 import { DealRatingBadge } from '@/components/domain/deal-rating-badge';
 import { FavoriteButton } from '@/components/domain/favorite-button';
-import { ListingPhotoPlaceholder } from '@/components/domain/listing-photo-placeholder';
+import { ListingPhoto } from '@/components/domain/listing-photo';
 import { MileageFlag } from '@/components/domain/mileage-flag';
 import { VerifiedBadge } from '@/components/domain/verified-badge';
 import { Link } from '@/i18n/navigation';
@@ -23,7 +23,13 @@ export function ListingRow({ listing }: { listing: Listing }) {
           className="absolute right-1 top-1 z-10"
         />
         <Link href={`/catalog/${listing.id}`}>
-          <ListingPhotoPlaceholder className="h-32 w-44 rounded-md" />
+          {/* Тамбнейл фиксированной ширины (w-44 = 176px) — sizes константный. */}
+          <ListingPhoto
+            photoUrl={listing.photoUrl}
+            alt={`${listing.make} ${listing.model}, ${listing.year}`}
+            sizes="176px"
+            className="h-32 w-44 rounded-md"
+          />
         </Link>
       </div>
       <div className="flex flex-1 flex-col justify-between gap-2 sm:flex-row sm:items-center">
