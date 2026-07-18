@@ -1,0 +1,344 @@
+// Carsale Core API — схема БД по docs/analysis/08-data-model.md (BE-0.3).
+// CHECK-ограничения, не выражаемые в Prisma (year, mileage, engine_volume, max 20 фото),
+// применяются на уровне приложения (Zod) и raw-миграций.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Enums ────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  BUYER
+  SELLER
+  ADMIN
+}
+
+enum VerificationStatus {
+  UNVERIFIED
+  PHONE_VERIFIED
+  IDENTITY_VERIFIED
+  SUSPENDED
+  BANNED
+}
+
+enum ListingStatus {
+  DRAFT
+  PENDING_MODERATION
+  PUBLISHED
+  REJECTED
+  ARCHIVED
+  SOLD
+  EXPIRED
+}
+
+enum DealRatingLabel {
+  GREAT_DEAL
+  FAIR_PRICE
+  OVERPRICED
+  UNAVAILABLE
+}
+
+enum VehicleCondition {
+  NEW
+  GOOD
+  FAIR
+  POOR
+}
+
+enum Transmission {
+  AUTOMATIC
+  MANUAL
+  CVT
+  ROBOT
+}
+
+enum DriveType {
+  FWD
+  RWD
+  AWD
+  FOUR_WD @map("4WD")
+}
+
+enum FuelType {
+  PETROL
+  DIESEL
+  GAS
+  ELECTRIC
+  HYBRID
+}
+
+enum PaymentType {
+  LISTING_PUBLICATION
+  VEHICLE_REPORT
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  SUCCESS
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentGateway {
+  CLICK
+  PAYME
+}
+
+// Типы уведомлений — ровно FR-11 (совпадает с web/types/notification.ts)
+enum NotificationType {
+  NEW_MESSAGE
+  PRICE_DROP
+  LISTING_STATUS
+}
+
+// ── Models ───────────────────────────────────────────────────────────────────
+
+model User {
+  id                 String             @id @default(uuid()) @db.Uuid
+  // Argon2-хеш номера; raw телефон не хранится и не логируется (NFR-15)
+  phoneHash          String             @unique @map("phone_hash") @db.VarChar(128)
+  email              String?            @db.VarChar(255)
+  role               UserRole           @default(BUYER)
+  verificationStatus VerificationStatus @default(UNVERIFIED) @map("verification_status")
+  marketingConsent   Boolean            @default(false) @map("marketing_consent")
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+  // Soft delete + анонимизация (ЗРУ-547 ст. 19–22); listings продавца остаются
+  deletedAt          DateTime?          @map("deleted_at")
+
+  listings      Listing[]
+  buyerThreads  ChatThread[]   @relation("ThreadBuyer")
+  sellerThreads ChatThread[]   @relation("ThreadSeller")
+  messages      Message[]
+  payments      Payment[]
+  notifications Notification[]
+  savedSearches SavedSearch[]
+  favorites     Favorite[]
+
+  @@index([verificationStatus])
+  @@index([email])
+  @@map("users")
+}
+
+model Listing {
+  id                  String           @id @default(uuid()) @db.Uuid
+  sellerId            String           @map("seller_id") @db.Uuid
+  status              ListingStatus    @default(DRAFT)
+  priceUzs            Decimal          @map("price_uzs") @db.Decimal(14, 0)
+  description         String?
+  city                String           @db.VarChar(64)
+  dealRatingLabel     DealRatingLabel? @map("deal_rating_label")
+  dealRatingScore     Float?           @map("deal_rating_score")
+  recommendedPriceMin Decimal?         @map("recommended_price_min") @db.Decimal(14, 0)
+  recommendedPriceMax Decimal?         @map("recommended_price_max") @db.Decimal(14, 0)
+  mileageFlag         Boolean          @default(false) @map("mileage_flag")
+  mileageFlagReason   String?          @map("mileage_flag_reason") @db.VarChar(512)
+  fraudFlag           Boolean          @default(false) @map("fraud_flag")
+  fraudReason         String?          @map("fraud_reason") @db.VarChar(512)
+  publishedAt         DateTime?        @map("published_at")
+  expiresAt           DateTime?        @map("expires_at")
+  createdAt           DateTime         @default(now()) @map("created_at")
+  updatedAt           DateTime         @updatedAt @map("updated_at")
+
+  // RESTRICT: нельзя удалить USER с активными объявлениями (08-data-model §3)
+  seller   User            @relation(fields: [sellerId], references: [id], onDelete: Restrict)
+  vehicle  Vehicle?
+  photos   Photo[]
+  mlResult MlResult?
+  threads  ChatThread[]
+  payments  Payment[]
+  history   VehicleHistory?
+  favorites Favorite[]
+
+  @@index([sellerId])
+  @@index([status])
+  @@index([city])
+  @@index([dealRatingLabel])
+  // составной — под фильтрацию каталога (FR-04)
+  @@index([status, city, dealRatingLabel])
+  // под cron-очистку EXPIRED (BE-3.7)
+  @@index([expiresAt])
+  @@map("listings")
+}
+
+model Vehicle {
+  id           String           @id @default(uuid()) @db.Uuid
+  listingId    String           @unique @map("listing_id") @db.Uuid
+  make         String           @db.VarChar(64)
+  model        String           @db.VarChar(128)
+  year         Int              @db.SmallInt
+  mileage      Int
+  // VIN и госномер НЕ возвращаются публичным API (BR-3): только admin и внутренние ML-запросы
+  vin          String?          @db.VarChar(17)
+  licensePlate String?          @map("license_plate") @db.VarChar(16)
+  condition    VehicleCondition
+  color        String?          @db.VarChar(32)
+  transmission Transmission
+  driveType    DriveType        @map("drive_type")
+  engineVolume Float?           @map("engine_volume")
+  fuelType     FuelType?        @map("fuel_type")
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@map("vehicles")
+}
+
+model Photo {
+  id            String   @id @default(uuid()) @db.Uuid
+  listingId     String   @map("listing_id") @db.Uuid
+  // Публикуется только blurred-версия; оригинал — private key в object storage
+  blurredUrl    String   @map("blurred_url") @db.VarChar(512)
+  originalKey   String   @map("original_key") @db.VarChar(512)
+  plateDetected Boolean  @default(false) @map("plate_detected")
+  sortOrder     Int      @map("sort_order") @db.SmallInt
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId])
+  @@map("photos")
+}
+
+model MlResult {
+  id                   String           @id @default(uuid()) @db.Uuid
+  listingId            String           @unique @map("listing_id") @db.Uuid
+  dealRatingLabel      DealRatingLabel? @map("deal_rating_label")
+  dealRatingScore      Float?           @map("deal_rating_score")
+  recommendedMin       Decimal?         @map("recommended_min") @db.Decimal(14, 0)
+  recommendedMax       Decimal?         @map("recommended_max") @db.Decimal(14, 0)
+  mileageAnomaly       Boolean          @default(false) @map("mileage_anomaly")
+  mileageAnomalyReason String?          @map("mileage_anomaly_reason") @db.VarChar(512)
+  fraudDetected        Boolean          @default(false) @map("fraud_detected")
+  fraudReason          String?          @map("fraud_reason") @db.VarChar(512)
+  imageHash            String?          @map("image_hash") @db.VarChar(128)
+  computedAt           DateTime         @map("computed_at")
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@map("ml_results")
+}
+
+model ChatThread {
+  id            String    @id @default(uuid()) @db.Uuid
+  // nullable: история чата сохраняется при удалении объявления (SET NULL — 08-data-model §3)
+  listingId     String?   @map("listing_id") @db.Uuid
+  buyerId       String    @map("buyer_id") @db.Uuid
+  sellerId      String    @map("seller_id") @db.Uuid
+  lastMessageAt DateTime? @map("last_message_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  listing  Listing?  @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  buyer    User      @relation("ThreadBuyer", fields: [buyerId], references: [id])
+  seller   User      @relation("ThreadSeller", fields: [sellerId], references: [id])
+  messages Message[]
+
+  // один тред на пару «объявление + покупатель»
+  @@unique([listingId, buyerId])
+  @@index([buyerId, lastMessageAt])
+  @@index([sellerId, lastMessageAt])
+  @@map("chat_threads")
+}
+
+model Message {
+  id       String   @id @default(uuid()) @db.Uuid
+  threadId String   @map("thread_id") @db.Uuid
+  senderId String   @map("sender_id") @db.Uuid
+  text     String
+  isRead   Boolean  @default(false) @map("is_read")
+  sentAt   DateTime @default(now()) @map("sent_at")
+
+  thread ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  sender User       @relation(fields: [senderId], references: [id])
+
+  @@index([threadId, sentAt])
+  @@map("messages")
+}
+
+model Payment {
+  id                   String         @id @default(uuid()) @db.Uuid
+  listingId            String         @map("listing_id") @db.Uuid
+  userId               String         @map("user_id") @db.Uuid
+  paymentType          PaymentType    @map("payment_type")
+  amountUzs            Decimal        @map("amount_uzs") @db.Decimal(14, 0)
+  currency             String         @default("UZS") @db.VarChar(8)
+  status               PaymentStatus  @default(PENDING)
+  gateway              PaymentGateway
+  // Внешний ID шлюза; UNIQUE — идемпотентность webhook (карты не хранятся, PCI через шлюз — BR-6)
+  gatewayTransactionId String?        @unique @map("gateway_transaction_id") @db.VarChar(128)
+  createdAt            DateTime       @default(now()) @map("created_at")
+  updatedAt            DateTime       @updatedAt @map("updated_at")
+
+  // RESTRICT: нельзя удалить объявление с успешным платежом
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Restrict)
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([listingId])
+  @@map("payments")
+}
+
+model Notification {
+  id          String           @id @default(uuid()) @db.Uuid
+  userId      String           @map("user_id") @db.Uuid
+  type        NotificationType
+  channel     String           @db.VarChar(16)
+  payload     Json
+  delivered   Boolean          @default(false)
+  createdAt   DateTime         @default(now()) @map("created_at")
+  deliveredAt DateTime?        @map("delivered_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // retention policy: удалять прочитанные > 30 дней (08-data-model §4)
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
+// Избранное (FR-13): m:n USER↔LISTING; заменит device-scope localStorage фронта (HANDOFF п.15)
+model Favorite {
+  userId    String   @map("user_id") @db.Uuid
+  listingId String   @map("listing_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@id([userId, listingId])
+  @@map("favorites")
+}
+
+model SavedSearch {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  filters      Json
+  alertEnabled Boolean  @default(false) @map("alert_enabled")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("saved_searches")
+}
+
+// P1 (FR-12): отчёт истории авто — заведено сразу, чтобы миграции Фазы 1 были аддитивными
+model VehicleHistory {
+  id                String   @id @default(uuid()) @db.Uuid
+  listingId         String   @unique @map("listing_id") @db.Uuid
+  accidentsCount    Int      @map("accidents_count")
+  finesCount        Int      @map("fines_count")
+  customsMileage    Int?     @map("customs_mileage")
+  reportGeneratedAt DateTime @map("report_generated_at")
+  dataSource        String   @map("data_source") @db.VarChar(128)
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@map("vehicle_histories")
+}
