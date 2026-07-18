@@ -36,8 +36,10 @@ function ListingsCollection({ listings, view }: { listings: Listing[]; view: Vie
   }
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-      {listings.map((listing) => (
-        <ListingCard key={listing.id} listing={listing} />
+      {listings.map((listing, index) => (
+        // Первая карточка грида — LCP-кандидат страницы каталога, её фото
+        // грузим с priority; остальные — лениво (дефолт next/image).
+        <ListingCard key={listing.id} listing={listing} priority={index === 0} />
       ))}
     </div>
   );
@@ -59,7 +61,10 @@ export default function CatalogPage({ searchParams }: CatalogPageProps) {
         <CatalogFilters />
       </Suspense>
 
-      <div className="mb-4 mt-6 flex items-center justify-between">
+      {/* flex-wrap: счётчик + сортировка + переключатель вида не помещаются
+          в один ряд на 360px (Linux-рендер шрифтов чуть шире локального —
+          ловилось вьюпорт-гейтом NFR-24 на CI) */}
+      <div className="mb-4 mt-6 flex flex-wrap items-center justify-between gap-y-2">
         <p className="text-sm text-muted-foreground">{t('count', { count: results.length })}</p>
         <div className="flex items-center gap-2">
           <Suspense fallback={null}>

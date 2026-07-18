@@ -98,13 +98,18 @@ function StepProgress({ current }: { current: WizardStep }) {
   const currentIndex = WIZARD_STEPS.indexOf(current);
   return (
     <ol className="mb-6 flex items-center gap-2">
+      {/* min-w-0 на li: flex-1 иначе не даёт колонке сжаться ниже min-content
+          подписи — длинная подпись шага («Проверка и публикация») выталкивала
+          индикатор за вьюпорт 360px (вьюпорт-гейт NFR-24 на CI) */}
       {WIZARD_STEPS.map((step, index) => (
-        <li key={step} className="flex flex-1 flex-col items-center gap-1">
+        <li key={step} className="flex min-w-0 flex-1 flex-col items-center gap-1">
           <div
             className={`h-1.5 w-full rounded-full ${index <= currentIndex ? 'bg-primary' : 'bg-muted'}`}
             aria-hidden
           />
-          <span className={`text-xs ${index === currentIndex ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
+          <span
+            className={`max-w-full break-words text-center text-xs ${index === currentIndex ? 'font-medium text-foreground' : 'text-muted-foreground'}`}
+          >
             {t(`steps.${step}`)}
           </span>
         </li>
