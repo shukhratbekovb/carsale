@@ -12,7 +12,9 @@
 - Vitest + React Testing Library
 - Полное обоснование стека и WBS эпиков — [docs/frontend-plan.md](docs/frontend-plan.md)
 
-Backend/ML/инфраструктура пока не заскаффолжены — только frontend (`web/`) в работе.
+## Backend (api/, ml/, infra/)
+
+Каркас заскаффолжен 2026-07-18. План разработки, декомпозиция задач и карта параллелизации — [docs/backend-plan.md](docs/backend-plan.md). Стек: Express + TS strict (модульный монолит, ADR-006), Prisma/PostgreSQL, Redis, RabbitMQ, MinIO; ML — Python FastAPI. Контракты API обязаны совпадать с мок-фасадами фронта (`web/lib/mock/**`, `web/types/**`).
 
 ## Workflow-правила (обязательные)
 

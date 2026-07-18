@@ -1,4 +1,4 @@
-# Handoff — состояние проекта на 2026-07-18 (обновлено: FE-10 QA реализован — все эпики FE-1–FE-10 закрыты)
+# Handoff — состояние проекта на 2026-07-18 (обновлено: старт backend — план + каркас api/, ml/, infra/)
 
 Снапшот для нового участника (человека или Claude Code сессии), продолжающего работу параллельно. Дополняет [CLAUDE.md](../CLAUDE.md) (правила workflow) и [frontend-plan.md](frontend-plan.md) (полный план, эпики FE-1–FE-10).
 
@@ -117,6 +117,15 @@
     - 16 фото автомобилей (`web/public/listings/`, Unsplash-лицензия) — демо-обложки мок-каталога; модели на снимках НЕ совпадают с mock-объявлениями (реальные фото придут из Core API вместе с LISTING_PHOTO: массив + блюр-версии). `Listing.photoUrl` опционален, без фото — прежний плейсхолдер. Общий `ListingPhoto` (next/image fill, priority только у LCP: hero детальной + первая карточка грида). В очереди модерации у DUPLICATE_PHOTOS-кейсов обложка совпадает с оригиналом — визуальное демо UC-15
     - **Первые прогоны гейта playwright-smoke на GitHub поймали 4 реальных бага, невидимых локально** (Linux-рендер шрифтов шире Windows): (1) Inter был подключён БЕЗ cyrillic-сабсета — весь русский текст рендерился системным fallback (это и типографический баг RU-локали, и источник расхождения метрик); (2) футер-навигация без flex-wrap (384px на 360px-вьюпорте); (3) тулбар каталога без flex-wrap (2px); (4) степ-индикатор wizard'а: flex-1 без min-w-0 не давал колонке сжаться ниже min-content подписи. Диагностика в viewports.spec.ts (список элементов за вьюпортом в сообщении падения) добавлена после первого падения и указала виновников точно
     - CI на GitHub **зелёный целиком** (run 29644258005): typecheck, lint, vitest 337, build, bundlewatch, playwright-smoke (45 e2e против production next start), lighthouse-ci
+
+24. **Backend стартовал — 2026-07-18 (план + каркас)**:
+    - **`docs/backend-plan.md`** — полный план BE-0…BE-10 по мотивам `analysis/13-delivery-plan.md`: стек (Express+TS модульный монолит по ADR-006, Prisma/PostgreSQL, Redis, RabbitMQ, MinIO, Socket.IO; ML — FastAPI+LightGBM/YOLO/pHash), подзадачи S/M/L с явными зависимостями и маркерами **[P]** для параллельного выполнения субагентами, карта волн 0–7, критический путь. Мок-фасады фронта (`web/lib/mock/**`, `web/types/**`) объявлены обязательными контрактами API
+    - **`api/`** — каркас Core API: 8 модулей-заглушек (auth/listing/catalog/chat/payment/notification/user/admin) отвечают 501 `not_implemented` (отличимо от 404 для фронта/e2e), единый формат ошибок `{error, code, details}`, X-Request-ID (NFR-27), pino JSON-логи (NFR-25), Zod-env (инфра-URL опциональны — каркас поднимается без docker). Проверено: typecheck, vitest 4/4
+    - **`api/prisma/schema.prisma`** — все 11 сущностей из `analysis/08-data-model.md` + Favorite (m:n из ER); каскады по §3 (Restrict/SetNull), составной индекс каталога. `prisma validate` зелёный; сама миграция требует поднятого PostgreSQL — хвост BE-0.3
+    - **`ml/`** — FastAPI-стаб: /health + 501-заглушки /v1/{deal-rating,blur,fraud-check} по контракту `analysis/10-integrations-api.md` §2.4. pytest 2/2 (локальный Python 3.10 — годится для стаба; для BE-2.3+ поднять 3.12 по плану)
+    - **`infra/docker-compose.yml`** — PostgreSQL 15/Redis 7/RabbitMQ 3/MinIO + init-джоба бакетов (originals private, blurred public — BR-3). Docker-прогон не выполнялся в этой сессии
+    - **Найденное противоречие в доках**: `08-data-model.md` таблица CHAT_THREAD требует `listing_id NOT NULL`, а её же §3 задаёт `SET NULL` при удалении объявления — взято nullable (история чата важнее), зафиксировано комментарием в схеме
+    - **Не сделано (следующие шаги по плану)**: первая миграция на живой БД, CI-workflow для api/ (BE-0.6), rate-limit и клиенты Redis/RabbitMQ/S3 (BE-0.7/0.8), субагенты `api-agent`/`ml-agent` (рекомендация в плане §4)
 
 ## В работе / следующий шаг
 
