@@ -1,0 +1,35 @@
+{
+  "name": "carsale-api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Carsale Core API — modular monolith (ADR-006)",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prisma:validate": "prisma validate",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "pino": "^9.5.0",
+    "pino-http": "^10.3.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.10.2",
+    "@types/supertest": "^6.0.2",
+    "prisma": "^6.1.0",
+    "supertest": "^7.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
