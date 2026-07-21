@@ -8,7 +8,7 @@ import { adminRouter } from './modules/admin/router.js';
 import { authRouter } from './modules/auth/router.js';
 import { catalogRouter } from './modules/catalog/router.js';
 import { chatRouter } from './modules/chat/router.js';
-import { listingRouter } from './modules/listing/router.js';
+import { listingRouter, myListingsRouter } from './modules/listing/router.js';
 import { notificationRouter } from './modules/notification/router.js';
 import { paymentRouter } from './modules/payment/router.js';
 import { userRouter } from './modules/user/router.js';
@@ -31,6 +31,7 @@ export function createApp(): express.Express {
   // внутри catalog только GET-хендлеры, остальное проваливается дальше в listing
   app.use('/listings', catalogRouter);
   app.use('/listings', listingRouter);
+  app.use('/my', myListingsRouter);
   app.use('/chat', chatRouter);
   app.use('/payments', paymentRouter);
   app.use('/webhooks', paymentRouter);
