@@ -1,4 +1,4 @@
-# Handoff — состояние проекта на 2026-07-18 (обновлено: старт backend — план + каркас api/, ml/, infra/)
+# Handoff — состояние проекта на 2026-07-18 (обновлено: backend волны 1–2 — инфра-каркас, фундамент Auth, ML seed)
 
 Снапшот для нового участника (человека или Claude Code сессии), продолжающего работу параллельно. Дополняет [CLAUDE.md](../CLAUDE.md) (правила workflow) и [frontend-plan.md](frontend-plan.md) (полный план, эпики FE-1–FE-10).
 
@@ -126,6 +126,18 @@
     - **`infra/docker-compose.yml`** — PostgreSQL 15/Redis 7/RabbitMQ 3/MinIO + init-джоба бакетов (originals private, blurred public — BR-3). Docker-прогон не выполнялся в этой сессии
     - **Найденное противоречие в доках**: `08-data-model.md` таблица CHAT_THREAD требует `listing_id NOT NULL`, а её же §3 задаёт `SET NULL` при удалении объявления — взято nullable (история чата важнее), зафиксировано комментарием в схеме
     - **Не сделано (следующие шаги по плану)**: первая миграция на живой БД, CI-workflow для api/ (BE-0.6), rate-limit и клиенты Redis/RabbitMQ/S3 (BE-0.7/0.8), субагенты `api-agent`/`ml-agent` (рекомендация в плане §4)
+
+25. **Backend волны 1–2 — 2026-07-18 (инфра-каркас + фундамент Auth + ML seed)**:
+    - **Субагенты `api-agent` / `ml-agent`** заведены (`.claude/agents/`) по прецеденту ui/data/test-агентов; оба **исключены** из `prisma/schema.prisma` (общая поверхность — правит только основная сессия). Часть задач гонялась параллельными фоновыми субагентами, часть — вручную в основной сессии (после того как фоновые агенты упали по session-лимиту, не потеряв уже записанные файлы)
+    - **BE-0.3 завершён**: `docker compose -f infra/docker-compose.yml up` (все 4 сервиса healthy, бакеты созданы init-джобой), первая Prisma-миграция `20260718133449_init` применена к живой БД — все 12 таблиц; `prisma migrate status` = up to date
+    - **BE-0.6**: два CI-workflow (`.github/workflows/backend-{api,ml}-ci.yml`) — раздельные paths-фильтры (в GitHub Actions они workflow-level, а триггеры api/ и ml/ разные). api: npm ci (пин `npm@11` как в фронтовом ci.yml) → typecheck → vitest → prisma validate (stub DATABASE_URL) → build. ml: python 3.12 → pytest. **На GitHub ещё не гонялись** (запустятся при первом push, задевающем пути)
+    - **BE-0.8**: `src/lib/{redis,queue,s3}.ts` — ленивые синглтоны (импорт не открывает соединение, каркас поднимается без docker). queue: реконнект с exp-backoff, at-least-once (ack/nack requeue=false). Зависимости: ioredis, amqplib, @aws-sdk/client-s3
+    - **BE-0.7**: `src/middleware/rate-limit.ts` — fixed-window на Redis (MULTI INCR+PEXPIRE NX), 60 req/мин на IP, фабрика с `keyFn` под будущий auth-тир 300 req/мин, 429 `{code: rate_limited, details.retry_after}` + Retry-After, fail-open без Redis. **Ещё не подключён в app.ts** — это интеграционное решение при разводке модулей
+    - **BE-1.6**: `src/lib/phone.ts` — `normalizePhone` (UZ → `998XXXXXXXXX`) + `hashPhone` (keyed HMAC-SHA256). **Осознанное отклонение от NFR-15** (там bcrypt/Argon2): солёный недетерминированный хеш не поддержит UNIQUE-индекс `phone_hash` и поиск по номеру (§6.1) — детерминированный keyed HMAC с `PHONE_HASH_SECRET`
+    - **BE-1.1**: `src/modules/auth/sms-gateway.ts` — порт `SmsGateway` + `EskizSmsGateway` (§2.1: таймаут 5с, ретраи 2с/5с, 422→invalid_phone без ретрая, исчерпание→503 sms_unavailable) + `MockSmsGateway` + фабрика (Eskiz если задан токен, иначе Mock)
+    - **BE-1.2**: `src/modules/auth/otp-service.ts` — OTP на Redis, семантика 1-в-1 с фронтовым otp-flow (§6.1): код хранится HMAC-хешем, TTL 300с, cooldown 60с, 3 неверных → блок 15 мин; откат записи при сбое SMS до выставления cooldown (§3.1)
+    - Проверено: api typecheck чист, **vitest 32/32**; ml **pytest 14/14**
+    - **Следующий шаг**: **BE-1.3** — HTTP-роуты `POST /auth/otp/{send,verify}` (склеить phone+otp-service+sms-gateway, заменить заглушку auth-роутера), затем BE-1.4 (JWT access/refresh) и BE-1.5 (RBAC). Параллельно — BE-2.3 (обучение LightGBM на seed) и BE-3.2/BE-4.1 (статусная машина Listing / каталог). Мок Redis/amqplib в юнит-тестах — живой БД/Redis для них не требуется
 
 ## В работе / следующий шаг
 
