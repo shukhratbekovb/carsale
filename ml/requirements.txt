@@ -1,8 +1,13 @@
-# Каркас BE-2.1; ML-зависимости (lightgbm, opencv, ultralytics, imagehash)
-# добавляются в задачах BE-2.3–2.5
 fastapi>=0.115
 uvicorn[standard]>=0.32
 pydantic>=2.9
+
+# Deal Rating (BE-2.3); CV/fraud-зависимости (opencv, ultralytics, imagehash)
+# добавляются в BE-2.4/2.5
+lightgbm>=4.5
+numpy>=2.0
+pandas>=2.2
+scikit-learn>=1.5
 
 # dev/test
 pytest>=8.3

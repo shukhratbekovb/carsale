@@ -11,18 +11,8 @@ def test_health() -> None:
     assert res.json() == {"status": "ok", "service": "ml-service"}
 
 
-def test_deal_rating_stub_returns_501_in_core_api_error_format() -> None:
-    res = client.post(
-        "/v1/deal-rating",
-        json={
-            "make": "Chevrolet",
-            "model": "Cobalt",
-            "year": 2020,
-            "mileage": 50000,
-            "condition": "GOOD",
-            "city": "Tashkent",
-            "price_uzs": 120_000_000,
-        },
-    )
+def test_blur_stub_returns_501_in_core_api_error_format() -> None:
+    # blur (BE-2.4) ещё заглушка; deal-rating уже реализован (см. test_deal_rating.py)
+    res = client.post("/v1/blur")
     assert res.status_code == 501
     assert res.json()["code"] == "not_implemented"

@@ -1,15 +1,20 @@
-"""Carsale ML Service — каркас (BE-2.1).
+"""Carsale ML Service (BE-2.x).
 
 Контракты эндпоинтов — docs/analysis/10-integrations-api.md §2.4:
-  POST /v1/deal-rating  — LightGBM-оценка цены (SLA p95 < 1 c)   → BE-2.3
+  POST /v1/deal-rating  — LightGBM-оценка цены (SLA p95 < 1 c)   → BE-2.3 (готово)
   POST /v1/blur         — блюр госномера/VIN, YOLO/OpenCV (< 5 c) → BE-2.4
   POST /v1/fraud-check  — pHash дублей + ценовая аномалия          → BE-2.5/2.6
-Пока каждый эндпоинт отвечает 501 в едином формате ошибок Core API.
 """
+
+import logging
 
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
+
+from app.models.deal_rating import get_model, unavailable_response
+
+logger = logging.getLogger("ml-service")
 
 app = FastAPI(title="Carsale ML Service", version="0.1.0")
 
@@ -37,8 +42,18 @@ def health() -> dict[str, str]:
 
 
 @app.post("/v1/deal-rating")
-def deal_rating(_req: DealRatingRequest) -> JSONResponse:
-    return _not_implemented("deal-rating")
+def deal_rating(req: DealRatingRequest) -> dict:
+    """Вердикт цены. При отсутствии модели или сбое инференса деградирует в
+    UNAVAILABLE (SLA §2.4: «недостаточно данных / ML недоступен»), не 5xx."""
+    model = get_model()
+    if model is None:
+        return unavailable_response()
+    try:
+        features = req.model_dump(exclude={"price_uzs"})
+        return model.rate(features, req.price_uzs)
+    except Exception:  # noqa: BLE001 — любой сбой инференса → graceful UNAVAILABLE
+        logger.exception("deal-rating inference failed")
+        return unavailable_response()
 
 
 @app.post("/v1/blur")
