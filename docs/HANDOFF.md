@@ -1,4 +1,4 @@
-# Handoff — состояние проекта на 2026-07-21 (обновлено: backend волна 5 — BE-3 жизненный цикл объявления продавца, publish→очередь на живой инфре)
+# Handoff — состояние проекта на 2026-07-21 (обновлено: backend волна 6 — BE-2.3 ML Deal Rating на LightGBM, MAPE 0.066)
 
 Снапшот для нового участника (человека или Claude Code сессии), продолжающего работу параллельно. Дополняет [CLAUDE.md](../CLAUDE.md) (правила workflow) и [frontend-plan.md](frontend-plan.md) (полный план, эпики FE-1–FE-10).
 
@@ -162,6 +162,13 @@
     - Попутно: **фикс latent typecheck-ошибки в `catalog/mapper.test.ts`** (каст `as Record` без `as unknown` — vitest проглатывал, `tsc` в CI отверг бы; поймано до прогона на GitHub)
     - **Не сделано в BE-3 (зависит от ML)**: BE-3.3 (загрузка фото → ML `/v1/blur` → MinIO), BE-3.4 (`price-estimate` → ML `/v1/deal-rating`, timeout→UNAVAILABLE), BE-3.6 (consumer `fraud_check` → PUBLISHED/PENDING + ML_RESULT + уведомление), BE-3.7 (scheduler EXPIRED / retry), BE-3.8 (пересчёт при смене цены). Событие `fraud_check` уже эмитится, но consumer'а пока нет — сообщения копятся в очереди
     - **Следующий шаг**: **BE-2.3** (ML `/v1/deal-rating` на LightGBM+seed) — разблокирует BE-3.4; далее ML-клиент в api + BE-3.4/3.3, потом BE-3.6 consumer. Параллельно можно BE-5 (Chat) и BE-4.2 (кэш)
+
+29. **Backend волна 6 — 2026-07-21 (BE-2.3: ML Deal Rating на LightGBM)**:
+    - **`ml/app/models/`**: `features.py` (единая кодировка признаков train/serve — vocab категорий), `train.py` (LightGBM-регрессор на `log1p(price)` синтетического seed, оценка MAPE на holdout, сохранение артефактов; пути инъектируемы — тесты не затирают закоммиченную модель), `deal_rating.py` (ленивый синглтон; пороги 07 §2.4: `GREAT_DEAL` цена≤медиана×0.9 / `FAIR_PRICE` / `OVERPRICED` >×1.1 + рекомендованный диапазон и score; при отсутствии артефакта/сбое инференса → `UNAVAILABLE`, не 5xx — SLA §2.4)
+    - **`/v1/deal-rating`** подключён в `main.py` (был 501-стаб): `model.rate(features, price)` или graceful `UNAVAILABLE`. Контракт ответа — 10-integrations-api §2.4 (`label/score/recommended_min_uzs/recommended_max_uzs/computed_at`)
+    - **Артефакт закоммичен** (`ml/app/models/artifacts/deal_rating.txt` 2.3MB + vocab.json, `.gitattributes -text`) — сервис работает из коробки без шага обучения; регенерация `python -m app.models.train`. requirements: lightgbm/numpy/pandas/scikit-learn
+    - Проверено: **pytest 22/22** (границы порогов, диапазон, UNAVAILABLE, обучение MAPE<0.15 на holdout в tmp, форма эндпоинта, 422). **Живой смоук** (uvicorn): MAPE **0.066** (вдвое лучше цели FR-05 ≤15%); для Cobalt 2020 метка едет GREAT_DEAL→FAIR_PRICE→OVERPRICED по мере роста цены через предсказанную медиану, неизвестные марки (Ferrari) не роняют сервис
+    - **Следующий шаг**: **ML-клиент в api** (`src/lib/ml-client.ts`, timeout 1.5с) → **BE-3.4** `POST /listings/:id/price-estimate` (контракт = `web/lib/mock/price-estimate.ts`, timeout→UNAVAILABLE). Затем BE-2.4 blur → BE-3.3 фото, BE-2.5/2.6+BE-3.6 fraud-consumer. Параллельно BE-5 Chat / BE-4.2 кэш
 
 ## В работе / следующий шаг
 
