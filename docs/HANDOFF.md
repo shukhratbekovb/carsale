@@ -1,4 +1,4 @@
-# Handoff — состояние проекта на 2026-07-21 (обновлено: backend волна 7 — BE-3.4 оценка цены продавцу через ML, конец-в-конец на живой инфре)
+# Handoff — состояние проекта на 2026-07-21 (обновлено: backend волна 8 — BE-5 Chat REST, диалог buyer↔seller с per-viewer unread на живой инфре)
 
 Снапшот для нового участника (человека или Claude Code сессии), продолжающего работу параллельно. Дополняет [CLAUDE.md](../CLAUDE.md) (правила workflow) и [frontend-plan.md](frontend-plan.md) (полный план, эпики FE-1–FE-10).
 
@@ -177,6 +177,13 @@
     - Попутный фикс дефекта теста (мок `saveDealRating` должен резолвиться промисом — код делает `.catch` в ветке UNAVAILABLE)
     - **Остаток BE-3 (зависит от ML CV/fraud)**: BE-2.4 blur → BE-3.3 фото (загрузка → блюр → MinIO), BE-2.5/2.6 + BE-3.6 fraud-consumer (разберёт копящиеся `fraud_check`), BE-3.7 scheduler, BE-3.8 пересчёт при смене цены
     - **Следующий шаг**: **BE-2.4** (ML `/v1/blur` — OpenCV/YOLO детекция+блюр номера) → **BE-3.3** (загрузка фото в api: multipart → ML blur → MinIO originals/blurred). Либо переключиться на **BE-5 Chat** (не зависит от ML) / **BE-4.2** (Redis-кэш каталога) / подключение rate-limit
+
+31. **Backend волна 8 — 2026-07-21 (BE-5.1/5.4: Chat REST — треды, сообщения, unread)**:
+    - **`src/modules/chat/`** — заглушка заменена REST-поверхностью §6.4 (контракт = `web/lib/mock/chat.ts`): `POST /chat/threads` (find-or-create по listingId, buyer=вызывающий, seller=владелец; UNIQUE(listingId, buyerId); 400 на своём листинге, 404 на не-PUBLISHED), `GET /chat/threads` (инбокс где ты buyer ИЛИ seller, превью + **per-viewer unread** через фильтрованный `_count`), `GET /chat/threads/:id(+/messages)`, `POST .../messages` (гейт участника, двигает `lastMessageAt` в транзакции), `POST .../read` (BE-5.4: помечает сообщения собеседника прочитанными → unread 0). Не-участник → 404 (не палим существование)
+    - **ПРОБЕЛ ДАННЫХ**: у `User` нет поля имени (08-data-model минимизирует PII, имя даёт OneID в P1) → `sellerName` пока плейсхолдер (задокументировано в service.ts); `listingTitle` выводится из vehicle. Для инбокса продавца «собеседник = покупатель» тоже пока не различается по имени — уточнение вместе с профилем
+    - Проверено: typecheck чист, **vitest 107/107** (router 9, service 7). **Живой смоук с двумя зарегистрированными юзерами + PUBLISHED-листинг** (статус выставлен через psql — fraud-consumer ещё нет): buyer шлёт 2 → у seller unread 2 + верные превью/title, seller read → 0, ответ seller → у buyer unread 1 (per-viewer подсчёт), история из 3 по порядку, 3-й юзер → 404; свой листинг → 400, find-or-create идемпотентен (201, затем 200)
+    - **Не сделано (BE-5.2/5.3)**: WebSocket Hub (Socket.IO) — real-time push `new_message` + офлайн-notify. Требует реструктуризации `server.ts` (http.Server + io) и WS-клиента для проверки — отдельный шаг. Сейчас чат работает по REST (доставка через refetch/polling)
+    - **Следующий шаг**: **BE-5.2/5.3** WebSocket Hub (Socket.IO, JWT-handshake, комнаты по треду, эмит `new_message`) — real-time для чата. Либо BE-2.4 blur / BE-4.2 кэш / подключение rate-limit
 
 ## В работе / следующий шаг
 
