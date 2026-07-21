@@ -52,7 +52,7 @@ describe('toPublicListing (BE-4)', () => {
   });
 
   it('не выдаёт VIN/госномер и диапазон рекомендованной цены (BR-3, FR-09)', () => {
-    const r = toPublicListing(row()) as Record<string, unknown>;
+    const r = toPublicListing(row()) as unknown as Record<string, unknown>;
     expect(r['vin']).toBeUndefined();
     expect(r['licensePlate']).toBeUndefined();
     expect(r['recommendedMin']).toBeUndefined();
@@ -82,7 +82,7 @@ describe('toPublicListing (BE-4)', () => {
         photos: [],
         vehicle: { ...row().vehicle, color: null, engineVolume: null, fuelType: null } as never,
       }),
-    ) as Record<string, unknown>;
+    ) as unknown as Record<string, unknown>;
     for (const key of ['description', 'photoUrl', 'color', 'engineVolume', 'fuelType', 'mileageFlagReason']) {
       expect(key in r).toBe(false);
     }
