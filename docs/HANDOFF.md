@@ -1,4 +1,4 @@
-# Handoff — состояние проекта на 2026-07-21 (обновлено: backend волна 4 — эпик BE-4 Каталог, публичный read-path на живой БД)
+# Handoff — состояние проекта на 2026-07-21 (обновлено: backend волна 5 — BE-3 жизненный цикл объявления продавца, publish→очередь на живой инфре)
 
 Снапшот для нового участника (человека или Claude Code сессии), продолжающего работу параллельно. Дополняет [CLAUDE.md](../CLAUDE.md) (правила workflow) и [frontend-plan.md](frontend-plan.md) (полный план, эпики FE-1–FE-10).
 
@@ -153,6 +153,15 @@
     - Проверено: typecheck чист, **vitest 69/69** (mapper 6 / validation 6 / router 6). **Живой смоук на seeded Postgres**: `make=Chevrolet`→2, `sort=price` по возрастанию, `sort=dealRating` выгодные→завышенные, `verifiedOnly`→только IDENTITY_VERIFIED, пустая→similar с fallback на марку, карточка без vin/plate, missing/non-uuid→404
     - **Не сделано в BE-4**: Redis-кэш каталога TTL 60с (BE-4.2) и нагрузочная проверка на 1М строк (BE-4.5) — отложены; `rate-limit` в app.ts всё ещё не подключён (добавляет глобальную зависимость от Redis в smoke-тест app.ts — сделать отдельным шагом с моком redis в app.test.ts)
     - **Следующий шаг**: **BE-3** (Listings — критический путь: `POST /listings/draft`, фото→ML blur→MinIO, price-estimate, publish→очередь fraud, статусная машина 07 §2.1) ∥ **BE-2.3** (обучение LightGBM на готовом seed). Затем BE-4.2 кэш, подключение rate-limit, BE-5 Chat
+
+28. **Backend волна 5 — 2026-07-21 (эпик BE-3 частично: жизненный цикл объявления продавца)**:
+    - **BE-3.2** `src/modules/listing/status-machine.ts` — чистая таблица переходов по 07 §2.1 (`canTransition`/`assertTransition` 409/`isEditable`)
+    - **BE-3.1** черновики (auth-gated, владелец = текущий пользователь): `POST /listings/draft` (полные характеристики по `web/lib/validation/sell.ts` → DRAFT + Vehicle), `PUT /listings/:id` (правка своего; REJECTED→DRAFT), `GET /my/listings` (на `/my` — GET под `/listings` конфликтовал бы с каталожным `/:id`)
+    - **BE-3.5** `POST /listings/:id/publish` — предусловия владелец + DRAFT + ≥1 фото, переход DRAFT→PENDING_MODERATION, **best-effort** событие `fraud_check` в RabbitMQ (сбой очереди логируется, не фатален — consumer BE-3.6 обработает позже). `driveType '4WD'↔FOUR_WD` в repository; `:id` валидируется как uuid
+    - Проверено: typecheck чист, **vitest 82/82** (status machine 5, router 8). **Живой смоук на реальных Postgres+RabbitMQ**: login → создать черновик → правка цены (видна в `/my/listings`) → publish без фото 400 `photos_required` → вставить фото → publish 202, статус в БД `PENDING_MODERATION`, глубина очереди `fraud_check`=1, и объявление **не появляется в каталоге** (PENDING, не PUBLISHED)
+    - Попутно: **фикс latent typecheck-ошибки в `catalog/mapper.test.ts`** (каст `as Record` без `as unknown` — vitest проглатывал, `tsc` в CI отверг бы; поймано до прогона на GitHub)
+    - **Не сделано в BE-3 (зависит от ML)**: BE-3.3 (загрузка фото → ML `/v1/blur` → MinIO), BE-3.4 (`price-estimate` → ML `/v1/deal-rating`, timeout→UNAVAILABLE), BE-3.6 (consumer `fraud_check` → PUBLISHED/PENDING + ML_RESULT + уведомление), BE-3.7 (scheduler EXPIRED / retry), BE-3.8 (пересчёт при смене цены). Событие `fraud_check` уже эмитится, но consumer'а пока нет — сообщения копятся в очереди
+    - **Следующий шаг**: **BE-2.3** (ML `/v1/deal-rating` на LightGBM+seed) — разблокирует BE-3.4; далее ML-клиент в api + BE-3.4/3.3, потом BE-3.6 consumer. Параллельно можно BE-5 (Chat) и BE-4.2 (кэш)
 
 ## В работе / следующий шаг
 
