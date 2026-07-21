@@ -24,6 +24,10 @@ const envSchema = z.object({
 
   JWT_SECRET: z.string().optional(),
   ESKIZ_API_TOKEN: z.string().optional(),
+  // HMAC-секреты (BE-1.2 / BE-1.6). Дефолты приемлемы только для dev/test;
+  // в prod задаются через окружение (09-architecture §5 — секреты вне кода).
+  OTP_HASH_SECRET: z.string().default('dev-otp-hash-secret'),
+  PHONE_HASH_SECRET: z.string().default('dev-phone-hash-secret'),
 });
 
 export type Env = z.infer<typeof envSchema>;
