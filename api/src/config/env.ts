@@ -22,10 +22,10 @@ const envSchema = z.object({
 
   ML_SERVICE_URL: z.string().url().optional(),
 
-  JWT_SECRET: z.string().optional(),
   ESKIZ_API_TOKEN: z.string().optional(),
-  // HMAC-секреты (BE-1.2 / BE-1.6). Дефолты приемлемы только для dev/test;
-  // в prod задаются через окружение (09-architecture §5 — секреты вне кода).
+  // Секреты подписи/хеширования (BE-1.2 / BE-1.4 / BE-1.6). Дефолты приемлемы
+  // только для dev/test; в prod задаются через окружение (09-architecture §5).
+  JWT_SECRET: z.string().default('dev-jwt-secret'),
   OTP_HASH_SECRET: z.string().default('dev-otp-hash-secret'),
   PHONE_HASH_SECRET: z.string().default('dev-phone-hash-secret'),
 });
