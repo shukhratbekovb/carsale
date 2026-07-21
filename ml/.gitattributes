@@ -1,0 +1,2 @@
+# Обученная модель Deal Rating — не трогать переводы строк (LightGBM native text)
+app/models/artifacts/deal_rating.txt -text
