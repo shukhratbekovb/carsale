@@ -1,4 +1,4 @@
-# Handoff — состояние проекта на 2026-07-21 (обновлено: backend волна 6 — BE-2.3 ML Deal Rating на LightGBM, MAPE 0.066)
+# Handoff — состояние проекта на 2026-07-21 (обновлено: backend волна 7 — BE-3.4 оценка цены продавцу через ML, конец-в-конец на живой инфре)
 
 Снапшот для нового участника (человека или Claude Code сессии), продолжающего работу параллельно. Дополняет [CLAUDE.md](../CLAUDE.md) (правила workflow) и [frontend-plan.md](frontend-plan.md) (полный план, эпики FE-1–FE-10).
 
@@ -169,6 +169,14 @@
     - **Артефакт закоммичен** (`ml/app/models/artifacts/deal_rating.txt` 2.3MB + vocab.json, `.gitattributes -text`) — сервис работает из коробки без шага обучения; регенерация `python -m app.models.train`. requirements: lightgbm/numpy/pandas/scikit-learn
     - Проверено: **pytest 22/22** (границы порогов, диапазон, UNAVAILABLE, обучение MAPE<0.15 на holdout в tmp, форма эндпоинта, 422). **Живой смоук** (uvicorn): MAPE **0.066** (вдвое лучше цели FR-05 ≤15%); для Cobalt 2020 метка едет GREAT_DEAL→FAIR_PRICE→OVERPRICED по мере роста цены через предсказанную медиану, неизвестные марки (Ferrari) не роняют сервис
     - **Следующий шаг**: **ML-клиент в api** (`src/lib/ml-client.ts`, timeout 1.5с) → **BE-3.4** `POST /listings/:id/price-estimate` (контракт = `web/lib/mock/price-estimate.ts`, timeout→UNAVAILABLE). Затем BE-2.4 blur → BE-3.3 фото, BE-2.5/2.6+BE-3.6 fraud-consumer. Параллельно BE-5 Chat / BE-4.2 кэш
+
+30. **Backend волна 7 — 2026-07-21 (BE-3.4: api ↔ ML, оценка цены продавцу)**:
+    - **`src/lib/ml-client.ts`** — fetch к ML `/v1/deal-rating`, таймаут 1.5с через AbortController (§2.4); любой сбой → `AppError ml_unavailable` (вызывающий деградирует в UNAVAILABLE)
+    - **BE-3.4** `POST /listings/:id/price-estimate` (auth, владелец): грузит признаки+цену черновика → ML → **сохраняет вердикт** на объявлении (`deal_rating_label/score/recommended_*`) и upsert `ML_RESULT`, возвращает `{ label, recommendedMin?, recommendedMax? }` (seller-facing — диапазон включён, в отличие от каталога). Таймаут/сбой ML или неизвестная метка → `UNAVAILABLE`, не 5xx. Репозиторий: `findEstimateSource` + `saveDealRating`
+    - Проверено: typecheck чист, **vitest 91/91** (ml-client 4, estimatePrice 4: 404/happy/ML-down/unknown-label, router price-estimate). **Живой смоук на реальных ML+api+Postgres**: Cobalt 2020 за 90M → **GREAT_DEAL** с диапазоном, сохранено в `listings` + `ml_results`; ML убит → **UNAVAILABLE** за 0.9с (< таймаут 1.5с), БД обновлена в UNAVAILABLE/null
+    - Попутный фикс дефекта теста (мок `saveDealRating` должен резолвиться промисом — код делает `.catch` в ветке UNAVAILABLE)
+    - **Остаток BE-3 (зависит от ML CV/fraud)**: BE-2.4 blur → BE-3.3 фото (загрузка → блюр → MinIO), BE-2.5/2.6 + BE-3.6 fraud-consumer (разберёт копящиеся `fraud_check`), BE-3.7 scheduler, BE-3.8 пересчёт при смене цены
+    - **Следующий шаг**: **BE-2.4** (ML `/v1/blur` — OpenCV/YOLO детекция+блюр номера) → **BE-3.3** (загрузка фото в api: multipart → ML blur → MinIO originals/blurred). Либо переключиться на **BE-5 Chat** (не зависит от ML) / **BE-4.2** (Redis-кэш каталога) / подключение rate-limit
 
 ## В работе / следующий шаг
 
