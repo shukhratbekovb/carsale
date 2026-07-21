@@ -1,14 +1,18 @@
 import { AppError } from '../../lib/errors.js';
 import { logger } from '../../lib/logger.js';
+import { mlDealRating } from '../../lib/ml-client.js';
 import { publishEvent } from '../../lib/queue.js';
 import {
   createDraft as repoCreateDraft,
+  findEstimateSource,
   findOwnedState,
   listBySeller,
   type MyListingRow,
+  saveDealRating,
   setStatus,
   updateDraft as repoUpdateDraft,
 } from './repository.js';
+import type { DealRatingLabel } from '@prisma/client';
 import { assertTransition, isEditable } from './status-machine.js';
 import type { DraftInput, UpdateInput } from './validation.js';
 
@@ -100,5 +104,65 @@ export async function publish(id: string, sellerId: string): Promise<void> {
     await publishEvent(FRAUD_CHECK_QUEUE, { action: 'fraud_check', listing_id: id });
   } catch (err) {
     logger.warn({ err, listingId: id }, 'publish: failed to emit fraud_check event');
+  }
+}
+
+const VALID_LABELS: ReadonlySet<string> = new Set([
+  'GREAT_DEAL',
+  'FAIR_PRICE',
+  'OVERPRICED',
+  'UNAVAILABLE',
+]);
+const normalizeLabel = (label: string): DealRatingLabel =>
+  (VALID_LABELS.has(label) ? label : 'UNAVAILABLE') as DealRatingLabel;
+
+export interface PriceEstimate {
+  label: string;
+  recommendedMin?: number;
+  recommendedMax?: number;
+}
+
+/**
+ * Оценка цены (BE-3.4, §6.2): признаки объявления → ML `/v1/deal-rating`,
+ * вердикт сохраняется на объявлении + ML_RESULT. Таймаут/сбой ML → UNAVAILABLE
+ * (§2.4), не 5xx. Контракт ответа = web/lib/mock/price-estimate.ts (seller видит
+ * диапазон, в отличие от публичного каталога).
+ */
+export async function estimatePrice(id: string, sellerId: string): Promise<PriceEstimate> {
+  const src = await findEstimateSource(id, sellerId);
+  if (!src) throw new AppError(404, 'listing_not_found', 'Listing not found');
+
+  try {
+    const ml = await mlDealRating({
+      make: src.make,
+      model: src.model,
+      year: src.year,
+      mileage: src.mileage,
+      condition: src.condition,
+      city: src.city,
+      price_uzs: src.priceUzs,
+    });
+    const label = normalizeLabel(ml.label);
+    await saveDealRating(id, {
+      label,
+      score: ml.score,
+      recommendedMin: ml.recommended_min_uzs,
+      recommendedMax: ml.recommended_max_uzs,
+      computedAt: new Date(ml.computed_at),
+    });
+    const result: PriceEstimate = { label };
+    if (ml.recommended_min_uzs != null) result.recommendedMin = ml.recommended_min_uzs;
+    if (ml.recommended_max_uzs != null) result.recommendedMax = ml.recommended_max_uzs;
+    return result;
+  } catch (err) {
+    logger.warn({ err, listingId: id }, 'price-estimate: ML unavailable, degrading to UNAVAILABLE');
+    await saveDealRating(id, {
+      label: 'UNAVAILABLE',
+      score: null,
+      recommendedMin: null,
+      recommendedMax: null,
+      computedAt: new Date(),
+    }).catch(() => undefined);
+    return { label: 'UNAVAILABLE' };
   }
 }

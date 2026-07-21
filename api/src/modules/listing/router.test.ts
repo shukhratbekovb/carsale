@@ -10,6 +10,7 @@ const svc = vi.hoisted(() => ({
   updateDraft: vi.fn(),
   listMine: vi.fn(),
   publish: vi.fn(),
+  estimatePrice: vi.fn(),
 }));
 vi.mock('./service.js', () => svc);
 
@@ -92,6 +93,14 @@ describe('listing router (BE-3.1/3.5)', () => {
     const res = await auth(request(app).post(`/listings/${UUID}/publish`));
     expect(res.status).toBe(400);
     expect(res.body.code).toBe('photos_required');
+  });
+
+  it('POST /listings/:id/price-estimate → 200 с оценкой', async () => {
+    svc.estimatePrice.mockResolvedValue({ label: 'FAIR_PRICE', recommendedMin: 1, recommendedMax: 2 });
+    const res = await auth(request(app).post(`/listings/${UUID}/price-estimate`));
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ label: 'FAIR_PRICE', recommendedMin: 1, recommendedMax: 2 });
+    expect(svc.estimatePrice).toHaveBeenCalledWith(UUID, 'seller-1');
   });
 
   it('GET /my/listings → 200 { items }', async () => {

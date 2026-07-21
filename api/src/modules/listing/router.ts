@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { asyncHandler } from '../../lib/async-handler.js';
 import { AppError } from '../../lib/errors.js';
 import { getAuth, requireAuth } from '../../middleware/auth.js';
-import { createDraft, listMine, publish, updateDraft } from './service.js';
+import { createDraft, estimatePrice, listMine, publish, updateDraft } from './service.js';
 import { draftSchema, updateSchema } from './validation.js';
 
 /**
@@ -43,6 +43,17 @@ listingRouter.put(
     const input = updateSchema.parse(req.body);
     await updateDraft(id, getAuth(res).sub, input);
     res.status(200).json({ id, updated: true });
+  }),
+);
+
+// POST /listings/:id/price-estimate — Deal Rating от ML (§6.2); ML down → UNAVAILABLE
+listingRouter.post(
+  '/:id/price-estimate',
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const id = listingId(req.params.id ?? '');
+    const estimate = await estimatePrice(id, getAuth(res).sub);
+    res.json(estimate);
   }),
 );
 
