@@ -1,4 +1,4 @@
-# Handoff — состояние проекта на 2026-07-18 (обновлено: backend волны 1–2 — инфра-каркас, фундамент Auth, ML seed)
+# Handoff — состояние проекта на 2026-07-21 (обновлено: backend волна 3 — эпик BE-1 Auth завершён, живой смоук пройден)
 
 Снапшот для нового участника (человека или Claude Code сессии), продолжающего работу параллельно. Дополняет [CLAUDE.md](../CLAUDE.md) (правила workflow) и [frontend-plan.md](frontend-plan.md) (полный план, эпики FE-1–FE-10).
 
@@ -137,7 +137,15 @@
     - **BE-1.1**: `src/modules/auth/sms-gateway.ts` — порт `SmsGateway` + `EskizSmsGateway` (§2.1: таймаут 5с, ретраи 2с/5с, 422→invalid_phone без ретрая, исчерпание→503 sms_unavailable) + `MockSmsGateway` + фабрика (Eskiz если задан токен, иначе Mock)
     - **BE-1.2**: `src/modules/auth/otp-service.ts` — OTP на Redis, семантика 1-в-1 с фронтовым otp-flow (§6.1): код хранится HMAC-хешем, TTL 300с, cooldown 60с, 3 неверных → блок 15 мин; откат записи при сбое SMS до выставления cooldown (§3.1)
     - Проверено: api typecheck чист, **vitest 32/32**; ml **pytest 14/14**
-    - **Следующий шаг**: **BE-1.3** — HTTP-роуты `POST /auth/otp/{send,verify}` (склеить phone+otp-service+sms-gateway, заменить заглушку auth-роутера), затем BE-1.4 (JWT access/refresh) и BE-1.5 (RBAC). Параллельно — BE-2.3 (обучение LightGBM на seed) и BE-3.2/BE-4.1 (статусная машина Listing / каталог). Мок Redis/amqplib в юнит-тестах — живой БД/Redis для них не требуется
+
+26. **Backend волна 3 — 2026-07-21 (эпик BE-1 Auth завершён: HTTP-роуты + JWT + RBAC)**:
+    - **BE-1.4** `src/lib/jwt.ts` — access 15 мин (stateless, `sub`+`role`) + refresh 30 дней с **Redis-allowlist по jti**: инвалидация на logout, одноразовая ротация на `/refresh`; `verifyAccessToken` отвергает не-access токены. Зависимость `jsonwebtoken`
+    - **BE-1.5** `src/middleware/auth.ts` — `requireAuth` (Bearer → `res.locals.auth`) + `requireRole(...)` (GUEST/BUYER/SELLER/ADMIN), стандартные 401/403
+    - **BE-1.3** `src/modules/auth/{validation,user-repository,service,router}.ts` — заглушка auth-роутера заменена реальными роутами (§6.1): `POST /auth/otp/send` (Zod-валидация номера, 429 cooldown), `/auth/otp/verify` (upsert по `phone_hash` → PHONE_VERIFIED, access в теле + refresh в httpOnly cookie, 201 новый / 200 вернувшийся, обязательное `personalDataConsent` — NFR-20, гейт BANNED/SUSPENDED), `/refresh` (cookie → ротация), `/logout` (revoke + очистка cookie). `service.ts` отдаёт `PublicUser` без `phone_hash` (BR-3). `cookie-parser` подключён в app.ts
+    - Enablers: `src/lib/prisma.ts` (ленивый PrismaClient, паттерн redis.ts), `src/lib/async-handler.ts` (проброс async-ошибок в Express 4), `postinstall: prisma generate` (чтобы `npm ci` в CI пересобирал клиент), `JWT_SECRET` dev-дефолт
+    - Проверено: typecheck чист, **vitest 51/51**. **Живой смоук на реальной инфре** (Redis+Postgres): send → код из лога MockSmsGateway → неверный код `attempts_left:2` → верный → **201**, юзер персистнут (`BUYER/PHONE_VERIFIED/phone_hash`), refresh ротируется, logout 204, повторный отозванный refresh → `token_revoked`
+    - **Известное уточнение (не блокер)**: при недоступном Redis OTP-роуты отдают сырой **500**, а по 09-architecture §5 внешняя недоступность должна быть **503**. Всплыло на живом смоуке, когда Docker Desktop успел сам выключиться (не баг кода — инфра лежала). Кандидат на общий маппинг Redis-ошибок → 503 в error-handler; отдельная маленькая задача
+    - **Следующий шаг**: подключить `rate-limit` в app.ts на auth-роуты (гость 60/мин, авторизованный 300/мин через `keyFn`), затем **BE-3** (Listings: CRUD черновиков → blur → price-estimate → publish → fraud-consumer) ∥ **BE-4** (Catalog) ∥ **BE-2.3** (обучение LightGBM на seed). Первые три — критический путь; ML параллелен
 
 ## В работе / следующий шаг
 
