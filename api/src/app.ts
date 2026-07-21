@@ -1,3 +1,4 @@
+import cookieParser from 'cookie-parser';
 import express from 'express';
 import { pinoHttp } from 'pino-http';
 import { logger } from './lib/logger.js';
@@ -19,6 +20,7 @@ export function createApp(): express.Express {
   app.use(requestId);
   app.use(pinoHttp({ logger, genReqId: (_req, res) => res.locals.requestId as string }));
   app.use(express.json({ limit: '1mb' }));
+  app.use(cookieParser());
 
   app.get('/health', (_req, res) => {
     res.json({ status: 'ok', service: 'core-api', uptime: process.uptime() });

@@ -12,7 +12,8 @@ describe('core-api scaffold', () => {
   });
 
   it('маршруты модулей-заглушек отвечают 501 в едином формате ошибки', async () => {
-    const res = await request(app).post('/auth/otp/send').send({ phone: '+998901234567' });
+    // /chat пока заглушка (auth уже реализован — BE-1.3)
+    const res = await request(app).get('/chat/threads');
     expect(res.status).toBe(501);
     expect(res.body).toMatchObject({ code: 'not_implemented' });
   });
