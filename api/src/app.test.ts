@@ -12,8 +12,8 @@ describe('core-api scaffold', () => {
   });
 
   it('маршруты модулей-заглушек отвечают 501 в едином формате ошибки', async () => {
-    // /chat пока заглушка (auth уже реализован — BE-1.3)
-    const res = await request(app).get('/chat/threads');
+    // /admin пока заглушка (auth/catalog/listing/chat уже реализованы)
+    const res = await request(app).get('/admin/moderation');
     expect(res.status).toBe(501);
     expect(res.body).toMatchObject({ code: 'not_implemented' });
   });
