@@ -1,4 +1,4 @@
-# Handoff — состояние проекта на 2026-07-21 (обновлено: backend волна 3 — эпик BE-1 Auth завершён, живой смоук пройден)
+# Handoff — состояние проекта на 2026-07-21 (обновлено: backend волна 4 — эпик BE-4 Каталог, публичный read-path на живой БД)
 
 Снапшот для нового участника (человека или Claude Code сессии), продолжающего работу параллельно. Дополняет [CLAUDE.md](../CLAUDE.md) (правила workflow) и [frontend-plan.md](frontend-plan.md) (полный план, эпики FE-1–FE-10).
 
@@ -145,7 +145,14 @@
     - Enablers: `src/lib/prisma.ts` (ленивый PrismaClient, паттерн redis.ts), `src/lib/async-handler.ts` (проброс async-ошибок в Express 4), `postinstall: prisma generate` (чтобы `npm ci` в CI пересобирал клиент), `JWT_SECRET` dev-дефолт
     - Проверено: typecheck чист, **vitest 51/51**. **Живой смоук на реальной инфре** (Redis+Postgres): send → код из лога MockSmsGateway → неверный код `attempts_left:2` → верный → **201**, юзер персистнут (`BUYER/PHONE_VERIFIED/phone_hash`), refresh ротируется, logout 204, повторный отозванный refresh → `token_revoked`
     - **Известное уточнение (не блокер)**: при недоступном Redis OTP-роуты отдают сырой **500**, а по 09-architecture §5 внешняя недоступность должна быть **503**. Всплыло на живом смоуке, когда Docker Desktop успел сам выключиться (не баг кода — инфра лежала). Кандидат на общий маппинг Redis-ошибок → 503 в error-handler; отдельная маленькая задача
-    - **Следующий шаг**: подключить `rate-limit` в app.ts на auth-роуты (гость 60/мин, авторизованный 300/мин через `keyFn`), затем **BE-3** (Listings: CRUD черновиков → blur → price-estimate → publish → fraud-consumer) ∥ **BE-4** (Catalog) ∥ **BE-2.3** (обучение LightGBM на seed). Первые три — критический путь; ML параллелен
+27. **Backend волна 4 — 2026-07-21 (эпик BE-4 Каталог: публичный read-path)**:
+    - **BE-4.1/4.3/4.4** `src/modules/catalog/{validation,mapper,repository,router}.ts` — заглушка каталога заменена реальными `GET /listings` (фильтры make/model/year/price/mileage/transmission/driveType/dealRating/city/verifiedOnly + q, сортировки date|price|dealRating, пагинация) и `GET /listings/:id`. Контракт 1-в-1 с `web/lib/catalog/filter-listings.ts` + `web/types/listing.ts`
+    - Только `PUBLISHED`; `mapper` отдаёт публичную форму **без VIN/госномера** (BR-3) и **без диапазона рекомендованной цены** (только продавцу, FR-09), конвертит Prisma `FOUR_WD` → `4WD`, `null` Deal Rating → `UNAVAILABLE`. Сортировка dealRating опирается на порядок объявления enum (`GREAT_DEAL<…<UNAVAILABLE`, NULL в конец). Пустая выдача → `similar[]` (та же марка, иначе последние — UC-01 alt-flow). `:id` валидируется как uuid → чистый 404 вместо Prisma-500
+    - **Монтирование**: catalog на `/listings` перед listing-заглушкой — GET-роуты ловит каталог, `POST /listings/draft` проваливается в listing-stub (501), как и задумано
+    - `npx prisma migrate dev` уже применил `init`; добавлен dev-seed `prisma/seed.ts` (`npm run db:seed`) — 2 продавца + 4 PUBLISHED-объявления для локальной проверки
+    - Проверено: typecheck чист, **vitest 69/69** (mapper 6 / validation 6 / router 6). **Живой смоук на seeded Postgres**: `make=Chevrolet`→2, `sort=price` по возрастанию, `sort=dealRating` выгодные→завышенные, `verifiedOnly`→только IDENTITY_VERIFIED, пустая→similar с fallback на марку, карточка без vin/plate, missing/non-uuid→404
+    - **Не сделано в BE-4**: Redis-кэш каталога TTL 60с (BE-4.2) и нагрузочная проверка на 1М строк (BE-4.5) — отложены; `rate-limit` в app.ts всё ещё не подключён (добавляет глобальную зависимость от Redis в smoke-тест app.ts — сделать отдельным шагом с моком redis в app.test.ts)
+    - **Следующий шаг**: **BE-3** (Listings — критический путь: `POST /listings/draft`, фото→ML blur→MinIO, price-estimate, publish→очередь fraud, статусная машина 07 §2.1) ∥ **BE-2.3** (обучение LightGBM на готовом seed). Затем BE-4.2 кэш, подключение rate-limit, BE-5 Chat
 
 ## В работе / следующий шаг
 
