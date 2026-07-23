@@ -41,6 +41,8 @@ export interface BlurRegion {
 export interface BlurResult {
   plateDetected: boolean;
   regions: BlurRegion[];
+  /** Перцептивный хеш оригинала (hex) — детекция дублей фото (BE-2.5/3.6). */
+  phash: string;
   /** Готовое blurred-изображение (JPEG) для загрузки в public-бакет. */
   blurredImage: Buffer;
 }
@@ -76,16 +78,72 @@ export async function mlBlur(
     const body = (await res.json()) as {
       plate_detected: boolean;
       regions: BlurRegion[];
+      phash: string;
       blurred_image_b64: string;
     };
     return {
       plateDetected: body.plate_detected,
       regions: body.regions,
+      phash: body.phash,
       blurredImage: Buffer.from(body.blurred_image_b64, 'base64'),
     };
   } catch (err) {
     if (err instanceof AppError) throw err;
     throw new AppError(503, 'blur_unavailable', 'ML blur service is unavailable');
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// --- Fraud check (BE-2.5/3.6, §2.4) ---
+
+const FRAUD_TIMEOUT_MS = 1_500;
+
+export interface FraudCheckInput {
+  make: string;
+  model: string;
+  year: number;
+  mileage: number;
+  condition: string;
+  city: string;
+  price_uzs: number;
+}
+
+export interface FraudCheckResponse {
+  priceAnomaly: boolean;
+  deviationPercent: number;
+  predictedMedianUzs: number | null;
+}
+
+/**
+ * Ценовая аномалия через ML `/v1/fraud-check` (§2.4). Сбой/таймаут не роняет
+ * модерацию: возвращает «аномалии нет» (дубли всё равно проверит consumer).
+ */
+export async function mlFraudCheck(input: FraudCheckInput): Promise<FraudCheckResponse> {
+  const NONE: FraudCheckResponse = { priceAnomaly: false, deviationPercent: 0, predictedMedianUzs: null };
+  if (!env.ML_SERVICE_URL) return NONE;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FRAUD_TIMEOUT_MS);
+  try {
+    const res = await fetch(`${env.ML_SERVICE_URL}/v1/fraud-check`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+      signal: controller.signal,
+    });
+    if (!res.ok) return NONE;
+    const body = (await res.json()) as {
+      price_anomaly: boolean;
+      deviation_percent: number;
+      predicted_median_uzs: number | null;
+    };
+    return {
+      priceAnomaly: body.price_anomaly,
+      deviationPercent: body.deviation_percent,
+      predictedMedianUzs: body.predicted_median_uzs,
+    };
+  } catch {
+    return NONE;
   } finally {
     clearTimeout(timer);
   }

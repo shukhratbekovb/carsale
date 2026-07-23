@@ -252,6 +252,7 @@ export async function addPhoto(
     blurredUrl: publicBlurredUrl(blurredKey),
     originalKey,
     plateDetected: blur.plateDetected,
+    phash: blur.phash ?? null,
     sortOrder: state.photoCount,
   });
   return toPhotoDTO(row);

@@ -188,6 +188,7 @@ export interface PhotoData {
   blurredUrl: string;
   originalKey: string;
   plateDetected: boolean;
+  phash: string | null;
   sortOrder: number;
 }
 
@@ -207,6 +208,7 @@ export async function createPhoto(d: PhotoData): Promise<PhotoRow> {
       blurredUrl: d.blurredUrl,
       originalKey: d.originalKey,
       plateDetected: d.plateDetected,
+      phash: d.phash,
       sortOrder: d.sortOrder,
     },
     select: { id: true, blurredUrl: true, plateDetected: true, sortOrder: true },
@@ -218,5 +220,100 @@ export async function listPhotos(listingId: string): Promise<PhotoRow[]> {
     where: { listingId },
     orderBy: { sortOrder: 'asc' },
     select: { id: true, blurredUrl: true, plateDetected: true, sortOrder: true },
+  });
+}
+
+// --- Fraud check (BE-3.6) ---
+
+export interface FraudSource {
+  status: ListingStatus;
+  sellerId: string;
+  fraudFlag: boolean;
+  make: string;
+  model: string;
+  year: number;
+  mileage: number;
+  condition: string;
+  city: string;
+  priceUzs: number;
+  phashes: string[];
+}
+
+/** Признаки + цена + pHash фото объявления для антифрод-проверки consumer'ом. */
+export async function findFraudSource(listingId: string): Promise<FraudSource | null> {
+  const row = await getPrisma().listing.findUnique({
+    where: { id: listingId },
+    select: {
+      status: true,
+      sellerId: true,
+      fraudFlag: true,
+      priceUzs: true,
+      city: true,
+      vehicle: { select: { make: true, model: true, year: true, mileage: true, condition: true } },
+      photos: { select: { phash: true } },
+    },
+  });
+  if (!row?.vehicle) return null;
+  return {
+    status: row.status,
+    sellerId: row.sellerId,
+    fraudFlag: row.fraudFlag,
+    make: row.vehicle.make,
+    model: row.vehicle.model,
+    year: row.vehicle.year,
+    mileage: row.vehicle.mileage,
+    condition: row.vehicle.condition,
+    city: row.city,
+    priceUzs: row.priceUzs.toNumber(),
+    phashes: row.photos.map((p) => p.phash).filter((h): h is string => h !== null),
+  };
+}
+
+/** pHash фото ДРУГИХ объявлений (корпус для сверки дублей). */
+export async function findOtherPhotoHashes(
+  listingId: string,
+): Promise<{ listingId: string; phash: string }[]> {
+  const rows = await getPrisma().photo.findMany({
+    where: { phash: { not: null }, listingId: { not: listingId } },
+    select: { listingId: true, phash: true },
+  });
+  return rows.map((r) => ({ listingId: r.listingId, phash: r.phash as string }));
+}
+
+export interface FraudDecisionData {
+  status: ListingStatus;
+  publishedAt?: Date;
+  fraudFlag: boolean;
+  fraudReason: string | null;
+  imageHash: string | null;
+  computedAt: Date;
+}
+
+/** Решение антифрода: статус листинга + fraud-поля + upsert ML_RESULT. */
+export async function saveFraudDecision(listingId: string, d: FraudDecisionData): Promise<void> {
+  await getPrisma().listing.update({
+    where: { id: listingId },
+    data: {
+      status: d.status,
+      fraudFlag: d.fraudFlag,
+      fraudReason: d.fraudReason,
+      ...(d.publishedAt !== undefined ? { publishedAt: d.publishedAt } : {}),
+      mlResult: {
+        upsert: {
+          create: {
+            fraudDetected: d.fraudFlag,
+            fraudReason: d.fraudReason,
+            imageHash: d.imageHash,
+            computedAt: d.computedAt,
+          },
+          update: {
+            fraudDetected: d.fraudFlag,
+            fraudReason: d.fraudReason,
+            imageHash: d.imageHash,
+            computedAt: d.computedAt,
+          },
+        },
+      },
+    },
   });
 }

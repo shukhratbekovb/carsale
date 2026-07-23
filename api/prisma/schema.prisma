@@ -201,12 +201,15 @@ model Photo {
   blurredUrl    String   @map("blurred_url") @db.VarChar(512)
   originalKey   String   @map("original_key") @db.VarChar(512)
   plateDetected Boolean  @default(false) @map("plate_detected")
+  // Перцептивный хеш (pHash, hex) оригинала — детекция дублей фото (BE-2.5/3.6)
+  phash         String?  @db.VarChar(64)
   sortOrder     Int      @map("sort_order") @db.SmallInt
   createdAt     DateTime @default(now()) @map("created_at")
 
   listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
 
   @@index([listingId])
+  @@index([phash])
   @@map("photos")
 }
 
