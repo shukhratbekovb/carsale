@@ -1,4 +1,4 @@
-# Handoff — состояние проекта на 2026-07-21 (обновлено: backend волна 8 — BE-5 Chat REST, диалог buyer↔seller с per-viewer unread на живой инфре)
+# Handoff — состояние проекта на 2026-07-23 (обновлено: backend волна 9 — BE-5.2/5.3 WebSocket Hub, эпик Chat закрыт, real-time push по проводу)
 
 Снапшот для нового участника (человека или Claude Code сессии), продолжающего работу параллельно. Дополняет [CLAUDE.md](../CLAUDE.md) (правила workflow) и [frontend-plan.md](frontend-plan.md) (полный план, эпики FE-1–FE-10).
 
@@ -184,6 +184,14 @@
     - Проверено: typecheck чист, **vitest 107/107** (router 9, service 7). **Живой смоук с двумя зарегистрированными юзерами + PUBLISHED-листинг** (статус выставлен через psql — fraud-consumer ещё нет): buyer шлёт 2 → у seller unread 2 + верные превью/title, seller read → 0, ответ seller → у buyer unread 1 (per-viewer подсчёт), история из 3 по порядку, 3-й юзер → 404; свой листинг → 400, find-or-create идемпотентен (201, затем 200)
     - **Не сделано (BE-5.2/5.3)**: WebSocket Hub (Socket.IO) — real-time push `new_message` + офлайн-notify. Требует реструктуризации `server.ts` (http.Server + io) и WS-клиента для проверки — отдельный шаг. Сейчас чат работает по REST (доставка через refetch/polling)
     - **Следующий шаг**: **BE-5.2/5.3** WebSocket Hub (Socket.IO, JWT-handshake, комнаты по треду, эмит `new_message`) — real-time для чата. Либо BE-2.4 blur / BE-4.2 кэш / подключение rate-limit
+
+32. **Backend волна 9 — 2026-07-23 (BE-5.2/5.3: WebSocket Hub — эпик BE-5 Chat закрыт)**:
+    - **`src/modules/chat/ws-hub.ts`** — Socket.IO поверх того же http-сервера (`server.ts` теперь строит `http.Server` + `initChatHub`). JWT-handshake (токен в `handshake.auth`) через `authenticateSocketToken`; клиент входит в комнату треда `thread:{id}` только после participant-проверки; `sendMessage` пушит `new_message` в комнату
+    - **Инверсия зависимости (IoC)**: сервис экспортирует `setMessageEmitter` и НЕ импортирует транспорт — socket.io не попадает в граф модулей тестов/REST; хаб регистрирует эмиттер при старте. `socket.io` импортируется **динамически** внутри `initChatHub` (не при загрузке модуля). server.ts — не top-level await (модуль CJS), а `initChatHub(server).then(listen)`. Зависимости: socket.io (+ socket.io-client dev)
+    - Проверено: typecheck чист, **vitest 110/110** (handshake-аутентификация: valid/missing/invalid). **Живьём по проводу** (socket.io-client): buyer коннектится с JWT, `join ack {ok:true}`, seller POST'ит сообщение по REST → buyer получает `new_message` в реальном времени (senderId=seller, SENT)
+    - **Эпик BE-5 Chat закрыт**: REST (BE-5.1/5.4) + WebSocket real-time (BE-5.2/5.3). **Не сделано**: BE-5.3 офлайн→queue notify отложен до BE-7 (notifications consumer ещё нет)
+    - **Инфра-наблюдение**: локальная Windows-машина под большой нагрузкой (много осиротевших node/docker/uvicorn от повторных live-тестов) — команды (`tail`/`curl`/`taskkill`/холодный старт node) висли по 30–90с. Это НЕ код; помогает периодически `taskkill //F //IM node.exe` между live-прогонами. Юнит-тесты стабильны (реальное выполнение 8–11с), раздувается только vitest `collect/prepare` окружения
+    - **Следующий шаг**: **BE-2.4** (ML `/v1/blur` — OpenCV детекция+блюр номера) → **BE-3.3** (загрузка фото). Либо **BE-4.2** (Redis-кэш каталога) / подключение rate-limit / **BE-6** (платежи Click/Payme) / **BE-7** (уведомления — разблокирует офлайн-notify чата и решения модерации)
 
 ## В работе / следующий шаг
 
