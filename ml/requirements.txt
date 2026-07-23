@@ -1,13 +1,18 @@
 fastapi>=0.115
 uvicorn[standard]>=0.32
 pydantic>=2.9
+# multipart — приём файлов в /v1/blur (BE-2.4)
+python-multipart>=0.0.9
 
-# Deal Rating (BE-2.3); CV/fraud-зависимости (opencv, ultralytics, imagehash)
-# добавляются в BE-2.4/2.5
+# Deal Rating (BE-2.3)
 lightgbm>=4.5
 numpy>=2.0
 pandas>=2.2
 scikit-learn>=1.5
+
+# Блюр госномера (BE-2.4). Пин <5: opencv-python 5.x — сырой major без
+# CascadeClassifier/bundled-каскадов; каскад закоммичен в app/vision/cascades/.
+opencv-python-headless>=4.10,<5
 
 # dev/test
 pytest>=8.3

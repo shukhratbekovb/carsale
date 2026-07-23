@@ -6,13 +6,15 @@
   POST /v1/fraud-check  — pHash дублей + ценовая аномалия          → BE-2.5/2.6
 """
 
+import json
 import logging
 
-from fastapi import FastAPI
+from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from app.models.deal_rating import get_model, unavailable_response
+from app.vision.blur import BadImageError, detect_and_blur
 
 logger = logging.getLogger("ml-service")
 
@@ -57,8 +59,37 @@ def deal_rating(req: DealRatingRequest) -> dict:
 
 
 @app.post("/v1/blur")
-def blur() -> JSONResponse:
-    return _not_implemented("blur")
+async def blur(
+    file: UploadFile = File(...),
+    regions: str | None = Form(default=None),
+) -> JSONResponse:
+    """Блюр госномера на фото (§2.4). multipart: file (обязательно) + regions
+    (опц. JSON-массив нормализованных областей — ручная корректировка продавца,
+    FR-03). Не найден номер → 200 plate_detected=false без блюра. Битый файл → 400.
+    Хранение — на стороне Core API (BE-3.3), сервис stateless."""
+    data = await file.read()
+    if not data:
+        return JSONResponse(status_code=400, content={"error": "empty file", "code": "bad_image"})
+
+    manual = None
+    if regions:
+        try:
+            manual = json.loads(regions)
+            if not isinstance(manual, list):
+                raise ValueError("regions must be a JSON array")
+        except (json.JSONDecodeError, ValueError):
+            return JSONResponse(
+                status_code=400, content={"error": "invalid regions", "code": "bad_regions"}
+            )
+
+    try:
+        return JSONResponse(content=detect_and_blur(data, manual))
+    except BadImageError:
+        return JSONResponse(status_code=400, content={"error": "cannot decode image", "code": "bad_image"})
+    except Exception:  # noqa: BLE001
+        # блюр НЕ деградируем в «вернуть оригинал» — это утечка номера; честный сбой
+        logger.exception("blur failed")
+        return JSONResponse(status_code=503, content={"error": "blur failed", "code": "blur_unavailable"})
 
 
 @app.post("/v1/fraud-check")
