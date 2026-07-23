@@ -79,6 +79,15 @@ export async function isParticipant(threadId: string, userId: string): Promise<b
   return row !== null;
 }
 
+export async function getThreadParticipants(
+  threadId: string,
+): Promise<{ buyerId: string; sellerId: string } | null> {
+  return getPrisma().chatThread.findUnique({
+    where: { id: threadId },
+    select: { buyerId: true, sellerId: true },
+  });
+}
+
 export const messageSelect = {
   id: true,
   threadId: true,

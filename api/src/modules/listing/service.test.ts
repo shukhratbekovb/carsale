@@ -16,6 +16,7 @@ vi.mock('./repository.js', () => repo);
 const ml = vi.hoisted(() => ({ mlDealRating: vi.fn() }));
 vi.mock('../../lib/ml-client.js', () => ml);
 vi.mock('../../lib/queue.js', () => ({ publishEvent: vi.fn() }));
+vi.mock('../notification/service.js', () => ({ notify: vi.fn() }));
 
 import { AppError } from '../../lib/errors.js';
 import { estimatePrice } from './service.js';

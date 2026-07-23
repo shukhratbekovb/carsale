@@ -7,11 +7,13 @@ const repo = vi.hoisted(() => ({
   listThreadsForUser: vi.fn(),
   getThreadIfParticipant: vi.fn(),
   isParticipant: vi.fn(),
+  getThreadParticipants: vi.fn(),
   listMessages: vi.fn(),
   createMessage: vi.fn(),
   markThreadRead: vi.fn(),
 }));
 vi.mock('./repository.js', () => repo);
+vi.mock('../notification/service.js', () => ({ notify: vi.fn() }));
 
 import { findOrCreateThread, getMessages, listThreads, sendMessage } from './service.js';
 
@@ -83,6 +85,7 @@ describe('chat service (BE-5.1/5.4)', () => {
 
   it('sendMessage: участник → создаёт сообщение, статус SENT', async () => {
     repo.isParticipant.mockResolvedValue(true);
+    repo.getThreadParticipants.mockResolvedValue({ buyerId: 'buyer-1', sellerId: 'seller-1' });
     repo.createMessage.mockResolvedValue({
       id: 'm1', threadId: 't', senderId: 'buyer-1', text: 'hi', sentAt: new Date('2026-07-21T00:00:00Z'),
     });

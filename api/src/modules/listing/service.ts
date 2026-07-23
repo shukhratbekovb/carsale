@@ -2,6 +2,7 @@ import { AppError } from '../../lib/errors.js';
 import { logger } from '../../lib/logger.js';
 import { mlDealRating } from '../../lib/ml-client.js';
 import { publishEvent } from '../../lib/queue.js';
+import { notify } from '../notification/service.js';
 import {
   createDraft as repoCreateDraft,
   findEstimateSource,
@@ -105,6 +106,13 @@ export async function publish(id: string, sellerId: string): Promise<void> {
   } catch (err) {
     logger.warn({ err, listingId: id }, 'publish: failed to emit fraud_check event');
   }
+
+  // Уведомление продавцу о смене статуса (FR-11, LISTING_STATUS)
+  await notify(sellerId, 'LISTING_STATUS', {
+    title: 'Объявление на модерации',
+    message: 'Ваше объявление отправлено на проверку',
+    link: '/my-listings',
+  });
 }
 
 const VALID_LABELS: ReadonlySet<string> = new Set([

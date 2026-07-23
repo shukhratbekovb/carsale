@@ -1,6 +1,8 @@
 import { AppError } from '../../lib/errors.js';
+import { notify } from '../notification/service.js';
 import {
   createMessage,
+  getThreadParticipants,
   createThread,
   findThreadByListingBuyer,
   getPublishedListingSeller,
@@ -130,6 +132,16 @@ export async function sendMessage(
   const dto = toMessageDto(row);
   // Real-time push участникам комнаты треда (BE-5.3); no-op в REST-only/тестах
   emitter?.(threadId, dto);
+  // Уведомление получателю (BE-7 / офлайн-путь BE-5.3): персист + would-be email/push
+  const parts = await getThreadParticipants(threadId);
+  if (parts) {
+    const recipient = parts.buyerId === userId ? parts.sellerId : parts.buyerId;
+    await notify(recipient, 'NEW_MESSAGE', {
+      title: 'Новое сообщение',
+      message: text.length > 80 ? `${text.slice(0, 80)}…` : text,
+      link: `/chat/${threadId}`,
+    });
+  }
   return dto;
 }
 
