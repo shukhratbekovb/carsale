@@ -22,6 +22,18 @@ const envSchema = z.object({
 
   ML_SERVICE_URL: z.string().url().optional(),
 
+  // Базовый URL фронта — для return_url и sim-URL платёжного флоу (BE-6)
+  WEB_BASE_URL: z.string().url().default('http://localhost:3100'),
+
+  // Платёжные шлюзы (BE-6, 10-integrations-api §2.2). Без креденшелов адаптеры
+  // отдают sim-URL (dev). Секреты подписи webhook — dev-дефолты только для dev/test.
+  CLICK_SERVICE_ID: z.string().optional(),
+  CLICK_TOKEN: z.string().optional(),
+  CLICK_MERCHANT_API_URL: z.string().url().optional(),
+  CLICK_SECRET_KEY: z.string().default('dev-click-secret'),
+  PAYME_MERCHANT_ID: z.string().optional(),
+  PAYME_SECRET_KEY: z.string().default('dev-payme-secret'),
+
   ESKIZ_API_TOKEN: z.string().optional(),
   // Секреты подписи/хеширования (BE-1.2 / BE-1.4 / BE-1.6). Дефолты приемлемы
   // только для dev/test; в prod задаются через окружение (09-architecture §5).

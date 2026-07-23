@@ -10,7 +10,7 @@ import { catalogRouter } from './modules/catalog/router.js';
 import { chatRouter } from './modules/chat/router.js';
 import { listingRouter, myListingsRouter } from './modules/listing/router.js';
 import { notificationRouter } from './modules/notification/router.js';
-import { paymentRouter } from './modules/payment/router.js';
+import { paymentsRouter, webhooksRouter } from './modules/payment/router.js';
 import { userRouter } from './modules/user/router.js';
 
 export function createApp(): express.Express {
@@ -33,8 +33,8 @@ export function createApp(): express.Express {
   app.use('/listings', listingRouter);
   app.use('/my', myListingsRouter);
   app.use('/chat', chatRouter);
-  app.use('/payments', paymentRouter);
-  app.use('/webhooks', paymentRouter);
+  app.use('/payments', paymentsRouter);
+  app.use('/webhooks', webhooksRouter);
   app.use('/notifications', notificationRouter);
   app.use('/me', userRouter);
   app.use('/admin', adminRouter);
