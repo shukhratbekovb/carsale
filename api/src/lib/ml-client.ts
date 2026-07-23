@@ -27,6 +27,70 @@ export interface DealRatingResponse {
   computed_at: string;
 }
 
+// --- Blur (BE-3.3, §2.4) ---
+
+const BLUR_TIMEOUT_MS = 6_000; // SLA p95 < 5000мс + запас
+
+export interface BlurRegion {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface BlurResult {
+  plateDetected: boolean;
+  regions: BlurRegion[];
+  /** Готовое blurred-изображение (JPEG) для загрузки в public-бакет. */
+  blurredImage: Buffer;
+}
+
+/**
+ * Блюр госномера через ML `/v1/blur` (multipart). regions — опц. ручная
+ * корректировка продавца. Любой сбой/таймаут → AppError blur_unavailable (503):
+ * НЕ деградируем в «сохранить оригинал», это была бы утечка номера.
+ */
+export async function mlBlur(
+  file: Buffer,
+  contentType: string,
+  regions?: BlurRegion[],
+): Promise<BlurResult> {
+  if (!env.ML_SERVICE_URL) {
+    throw new AppError(503, 'blur_unavailable', 'ML_SERVICE_URL is not configured');
+  }
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), BLUR_TIMEOUT_MS);
+  try {
+    const form = new FormData();
+    form.append('file', new Blob([new Uint8Array(file)], { type: contentType }), 'photo.jpg');
+    if (regions && regions.length > 0) form.append('regions', JSON.stringify(regions));
+
+    const res = await fetch(`${env.ML_SERVICE_URL}/v1/blur`, {
+      method: 'POST',
+      body: form,
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      throw new AppError(503, 'blur_unavailable', `ML blur responded ${res.status}`);
+    }
+    const body = (await res.json()) as {
+      plate_detected: boolean;
+      regions: BlurRegion[];
+      blurred_image_b64: string;
+    };
+    return {
+      plateDetected: body.plate_detected,
+      regions: body.regions,
+      blurredImage: Buffer.from(body.blurred_image_b64, 'base64'),
+    };
+  } catch (err) {
+    if (err instanceof AppError) throw err;
+    throw new AppError(503, 'blur_unavailable', 'ML blur service is unavailable');
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function mlDealRating(input: DealRatingInput): Promise<DealRatingResponse> {
   if (!env.ML_SERVICE_URL) {
     throw new AppError(503, 'ml_unavailable', 'ML_SERVICE_URL is not configured');

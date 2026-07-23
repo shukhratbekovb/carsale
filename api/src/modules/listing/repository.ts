@@ -179,3 +179,44 @@ export async function saveDealRating(id: string, d: DealRatingData): Promise<voi
     },
   });
 }
+
+// --- Фото (BE-3.3) ---
+
+export interface PhotoData {
+  id: string;
+  listingId: string;
+  blurredUrl: string;
+  originalKey: string;
+  plateDetected: boolean;
+  sortOrder: number;
+}
+
+export interface PhotoRow {
+  id: string;
+  blurredUrl: string;
+  plateDetected: boolean;
+  sortOrder: number;
+}
+
+// id общий для ключа в object storage и строки Photo (единый идентификатор фото).
+export async function createPhoto(d: PhotoData): Promise<PhotoRow> {
+  return getPrisma().photo.create({
+    data: {
+      id: d.id,
+      listingId: d.listingId,
+      blurredUrl: d.blurredUrl,
+      originalKey: d.originalKey,
+      plateDetected: d.plateDetected,
+      sortOrder: d.sortOrder,
+    },
+    select: { id: true, blurredUrl: true, plateDetected: true, sortOrder: true },
+  });
+}
+
+export async function listPhotos(listingId: string): Promise<PhotoRow[]> {
+  return getPrisma().photo.findMany({
+    where: { listingId },
+    orderBy: { sortOrder: 'asc' },
+    select: { id: true, blurredUrl: true, plateDetected: true, sortOrder: true },
+  });
+}

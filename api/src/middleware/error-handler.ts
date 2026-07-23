@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
+import { MulterError } from 'multer';
 import { ZodError } from 'zod';
 import { AppError } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
@@ -27,6 +28,14 @@ export function errorHandler(
       error: 'Validation failed',
       code: 'validation_error',
       details: { issues: err.issues },
+    });
+    return;
+  }
+  // Ошибки загрузки файла (multer): превышение размера и т.п. → 400, не 500
+  if (err instanceof MulterError) {
+    res.status(400).json({
+      error: err.message,
+      code: err.code === 'LIMIT_FILE_SIZE' ? 'file_too_large' : 'upload_error',
     });
     return;
   }

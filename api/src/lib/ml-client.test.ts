@@ -8,7 +8,7 @@ const envState = vi.hoisted(() => ({
 }));
 vi.mock('../config/env.js', () => ({ env: envState.state }));
 
-import { mlDealRating } from './ml-client.js';
+import { mlBlur, mlDealRating } from './ml-client.js';
 
 const okBody = {
   label: 'FAIR_PRICE',
@@ -46,6 +46,46 @@ describe('mlDealRating (BE-3.4)', () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
     await expect(mlDealRating({ make: 'X', model: 'Y', year: 2020, mileage: 1, condition: 'GOOD', city: 'T', price_uzs: 1 })).rejects.toMatchObject({ code: 'ml_unavailable' });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('mlBlur (BE-3.3)', () => {
+  const blurBody = {
+    plate_detected: true,
+    regions: [{ x: 0.1, y: 0.2, width: 0.3, height: 0.1 }],
+    blurred_image_b64: Buffer.from('BLURREDJPEG').toString('base64'),
+  };
+
+  it('успех → multipart FormData, декодированный blurredImage + флаги', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => blurBody });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const res = await mlBlur(Buffer.from('rawjpeg'), 'image/jpeg', [{ x: 0.1, y: 0.2, width: 0.3, height: 0.1 }]);
+    expect(res.plateDetected).toBe(true);
+    expect(res.regions).toHaveLength(1);
+    expect(res.blurredImage.toString()).toBe('BLURREDJPEG');
+
+    const [, opts] = fetchMock.mock.calls[0] as [string, { body: unknown }];
+    expect(opts.body).toBeInstanceOf(FormData);
+    expect((opts.body as FormData).get('regions')).toBe(JSON.stringify([{ x: 0.1, y: 0.2, width: 0.3, height: 0.1 }]));
+  });
+
+  it('не-2xx → blur_unavailable (503)', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 503 }));
+    await expect(mlBlur(Buffer.from('x'), 'image/jpeg')).rejects.toMatchObject({ code: 'blur_unavailable', status: 503 });
+  });
+
+  it('таймаут/сетевая ошибка → blur_unavailable', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new DOMException('aborted', 'AbortError')));
+    await expect(mlBlur(Buffer.from('x'), 'image/jpeg')).rejects.toMatchObject({ code: 'blur_unavailable' });
+  });
+
+  it('не задан ML_SERVICE_URL → blur_unavailable без fetch', async () => {
+    envState.state.ML_SERVICE_URL = undefined;
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(mlBlur(Buffer.from('x'), 'image/jpeg')).rejects.toMatchObject({ code: 'blur_unavailable' });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });

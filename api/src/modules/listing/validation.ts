@@ -34,5 +34,17 @@ export const updateSchema = draftSchema.partial().refine((obj) => Object.keys(ob
   message: 'At least one field is required',
 });
 
+// Области ручной корректировки блюра (BE-3.3, FR-03) — нормализованные [0..1].
+export const regionsSchema = z
+  .array(
+    z.object({
+      x: z.number().min(0).max(1),
+      y: z.number().min(0).max(1),
+      width: z.number().min(0).max(1),
+      height: z.number().min(0).max(1),
+    }),
+  )
+  .max(20);
+
 export type DraftInput = z.infer<typeof draftSchema>;
 export type UpdateInput = z.infer<typeof updateSchema>;

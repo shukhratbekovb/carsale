@@ -11,6 +11,8 @@ const svc = vi.hoisted(() => ({
   listMine: vi.fn(),
   publish: vi.fn(),
   estimatePrice: vi.fn(),
+  addPhoto: vi.fn(),
+  getPhotos: vi.fn(),
 }));
 vi.mock('./service.js', () => svc);
 
@@ -109,5 +111,53 @@ describe('listing router (BE-3.1/3.5)', () => {
     expect(res.status).toBe(200);
     expect(res.body.items).toHaveLength(1);
     expect(svc.listMine).toHaveBeenCalledWith('seller-1');
+  });
+
+  it('POST /listings/:id/photos без токена → 401', async () => {
+    const res = await request(app).post(`/listings/${UUID}/photos`).attach('file', Buffer.from('x'), 'car.jpg');
+    expect(res.status).toBe(401);
+    expect(svc.addPhoto).not.toHaveBeenCalled();
+  });
+
+  it('POST /listings/:id/photos без файла → 400 file_required', async () => {
+    const res = await auth(request(app).post(`/listings/${UUID}/photos`));
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('file_required');
+    expect(svc.addPhoto).not.toHaveBeenCalled();
+  });
+
+  it('POST /listings/:id/photos с файлом → 201, buffer+contentType в сервис', async () => {
+    svc.addPhoto.mockResolvedValue({ id: 'p1', blurredUrl: 'u', plateDetected: true, sortOrder: 0 });
+    const res = await auth(request(app).post(`/listings/${UUID}/photos`)).attach('file', Buffer.from('jpegbytes'), {
+      filename: 'car.jpg',
+      contentType: 'image/jpeg',
+    });
+    expect(res.status).toBe(201);
+    expect(res.body).toMatchObject({ id: 'p1', plateDetected: true });
+    expect(svc.addPhoto).toHaveBeenCalledWith(
+      UUID,
+      'seller-1',
+      expect.objectContaining({ contentType: 'image/jpeg' }),
+      undefined,
+    );
+  });
+
+  it('POST /listings/:id/photos с regions (JSON) → парсятся и уходят в сервис', async () => {
+    svc.addPhoto.mockResolvedValue({ id: 'p1', blurredUrl: 'u', plateDetected: true, sortOrder: 0 });
+    const res = await auth(request(app).post(`/listings/${UUID}/photos`))
+      .field('regions', '[{"x":0.3,"y":0.7,"width":0.3,"height":0.1}]')
+      .attach('file', Buffer.from('jpegbytes'), { filename: 'car.jpg', contentType: 'image/jpeg' });
+    expect(res.status).toBe(201);
+    expect(svc.addPhoto).toHaveBeenCalledWith(UUID, 'seller-1', expect.any(Object), [
+      { x: 0.3, y: 0.7, width: 0.3, height: 0.1 },
+    ]);
+  });
+
+  it('GET /listings/:id/photos → 200 { items }', async () => {
+    svc.getPhotos.mockResolvedValue([{ id: 'p1', blurredUrl: 'u', plateDetected: false, sortOrder: 0 }]);
+    const res = await auth(request(app).get(`/listings/${UUID}/photos`));
+    expect(res.status).toBe(200);
+    expect(res.body.items).toHaveLength(1);
+    expect(svc.getPhotos).toHaveBeenCalledWith(UUID, 'seller-1');
   });
 });

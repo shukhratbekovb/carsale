@@ -19,6 +19,8 @@ const envSchema = z.object({
   S3_SECRET_KEY: z.string().optional(),
   S3_BUCKET_ORIGINALS: z.string().default('photos-originals'),
   S3_BUCKET_BLURRED: z.string().default('photos-blurred'),
+  // Публичный базовый URL blurred-бакета (CDN в prod); в dev — сам MinIO-endpoint
+  S3_PUBLIC_URL: z.string().url().optional(),
 
   ML_SERVICE_URL: z.string().url().optional(),
 
