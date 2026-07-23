@@ -1,4 +1,4 @@
-# Handoff — состояние проекта на 2026-07-23 (обновлено: backend волна 9 — BE-5.2/5.3 WebSocket Hub, эпик Chat закрыт, real-time push по проводу)
+# Handoff — состояние проекта на 2026-07-23 (обновлено: backend волна 10 — BE-7 Уведомления, per-type toggle + продьюсеры listing/chat на живой инфре)
 
 Снапшот для нового участника (человека или Claude Code сессии), продолжающего работу параллельно. Дополняет [CLAUDE.md](../CLAUDE.md) (правила workflow) и [frontend-plan.md](frontend-plan.md) (полный план, эпики FE-1–FE-10).
 
@@ -192,6 +192,14 @@
     - **Эпик BE-5 Chat закрыт**: REST (BE-5.1/5.4) + WebSocket real-time (BE-5.2/5.3). **Не сделано**: BE-5.3 офлайн→queue notify отложен до BE-7 (notifications consumer ещё нет)
     - **Инфра-наблюдение**: локальная Windows-машина под большой нагрузкой (много осиротевших node/docker/uvicorn от повторных live-тестов) — команды (`tail`/`curl`/`taskkill`/холодный старт node) висли по 30–90с. Это НЕ код; помогает периодически `taskkill //F //IM node.exe` между live-прогонами. Юнит-тесты стабильны (реальное выполнение 8–11с), раздувается только vitest `collect/prepare` окружения
     - **Следующий шаг**: **BE-2.4** (ML `/v1/blur` — OpenCV детекция+блюр номера) → **BE-3.3** (загрузка фото). Либо **BE-4.2** (Redis-кэш каталога) / подключение rate-limit / **BE-6** (платежи Click/Payme) / **BE-7** (уведомления — разблокирует офлайн-notify чата и решения модерации)
+
+33. **Backend волна 10 — 2026-07-23 (BE-7: Уведомления, FR-11)**:
+    - **Миграция** `notification_prefs`: `User.notificationPrefs` (JSON, per-type toggle; null → все включены) + `Notification.readAt` (in-app read-статус, отдельно от `delivered`). Одна миграция захватила оба поля (под нагрузкой первая `migrate dev` прочла схему уже после правки readAt); `migrate status` = up to date
+    - **`src/modules/notification/`** — публичный интерфейс `notify()` (другие модули зовут его, ADR-006): персистит in-app NOTIFICATION, **уважает per-type prefs буквально** (тип отключён → не создаётся, как во фронтовом моке), **best-effort** (сбой логируется, не пробрасывается — продьюсер не падает). Строки title/message/link даёт вызывающий в payload (модуль не хардкодит — тот же принцип). REST: `GET /notifications` (`{items, unreadCount}`), `POST /notifications/read`, `GET/PUT /notifications/preferences`. Email/push-адаптеры (BE-7.2/7.3) отложены — доставка пока лог-заглушка
+    - **Продьюсеры** (через публичный интерфейс модуля): listing `publish` → `LISTING_STATUS` продавцу; chat `sendMessage` → `NEW_MESSAGE` получателю (**реализует офлайн-путь BE-5.3** как персистнутое уведомление — добавлен `getThreadParticipants`)
+    - Проверено: typecheck чист, **vitest 117/117** (+7 notification service). **Живой смоук**: publish → у продавца `LISTING_STATUS` (unread 1); сообщение покупателя → `NEW_MESSAGE` (unread 2); продавец отключает `NEW_MESSAGE` через PUT prefs → следующее сообщение НЕ создаёт уведомление (unread остаётся 2, count 2); `POST /read` → unread 0
+    - **Не сделано**: реальные email (SES/SendGrid) и Web Push (VAPID) — адаптеры-порты как у SMS; async-доставка через очередь (сейчас notify синхронный in-process, что ок для in-app; очередь нужна, когда доставка станет медленной email/push)
+    - **Следующий шаг**: **BE-6** (платежи Click/Payme — webhook'и, идемпотентность; квитанция уйдёт через notify) / **BE-2.4→3.3** (blur+фото) / **BE-8** (Admin — модерация разгребёт `fraud_check` вручную, решение → notify продавцу). Каталог/чат/уведомления уже связаны через notify
 
 ## В работе / следующий шаг
 
