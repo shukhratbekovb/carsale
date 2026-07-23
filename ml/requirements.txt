@@ -13,6 +13,9 @@ scikit-learn>=1.5
 # Блюр госномера (BE-2.4). Пин <5: opencv-python 5.x — сырой major без
 # CascadeClassifier/bundled-каскадов; каскад закоммичен в app/vision/cascades/.
 opencv-python-headless>=4.10,<5
+# pHash дублей фото (BE-2.5) — перцептивный хеш при загрузке
+imagehash>=4.3
+Pillow>=10
 
 # dev/test
 pytest>=8.3

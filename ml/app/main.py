@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 
 from app.models.deal_rating import get_model, unavailable_response
 from app.vision.blur import BadImageError, detect_and_blur
+from app.vision.fraud import evaluate as evaluate_fraud
 
 logger = logging.getLogger("ml-service")
 
@@ -92,6 +93,25 @@ async def blur(
         return JSONResponse(status_code=503, content={"error": "blur failed", "code": "blur_unavailable"})
 
 
+class FraudCheckRequest(BaseModel):
+    make: str
+    model: str
+    year: int = Field(ge=1950)
+    mileage: int = Field(ge=0)
+    condition: str
+    city: str
+    price_uzs: int = Field(gt=0)
+
+
 @app.post("/v1/fraud-check")
-def fraud_check() -> JSONResponse:
-    return _not_implemented("fraud-check")
+def fraud_check(req: FraudCheckRequest) -> dict:
+    """Ценовая аномалия по медиане Deal-Rating-модели (§2.4). Детекция дублей
+    фото — на стороне Core API по корпусу pHash (BE-3.6). При недоступной модели
+    аномалия не вычисляется (price_anomaly=false), не 5xx."""
+    model = get_model()
+    features = req.model_dump(exclude={"price_uzs"})
+    try:
+        return evaluate_fraud(model, features, req.price_uzs)
+    except Exception:  # noqa: BLE001 — сбой инференса не должен ронять модерацию
+        logger.exception("fraud-check evaluation failed")
+        return {"price_anomaly": False, "deviation_percent": 0.0, "predicted_median_uzs": None}

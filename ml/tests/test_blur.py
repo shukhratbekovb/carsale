@@ -30,7 +30,7 @@ def _decode_b64(b64: str) -> np.ndarray:
 
 def test_detect_and_blur_shape():
     res = detect_and_blur(_noisy_jpeg())
-    assert set(res) == {"plate_detected", "regions", "blurred_image_b64", "processing_time_ms"}
+    assert set(res) == {"plate_detected", "regions", "phash", "blurred_image_b64", "processing_time_ms"}
     assert isinstance(res["plate_detected"], bool)
     assert isinstance(res["regions"], list)
     assert res["processing_time_ms"] >= 0

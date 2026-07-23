@@ -11,8 +11,8 @@ def test_health() -> None:
     assert res.json() == {"status": "ok", "service": "ml-service"}
 
 
-def test_fraud_check_stub_returns_501_in_core_api_error_format() -> None:
-    # fraud-check (BE-2.5/2.6) ещё заглушка; deal-rating (BE-2.3) и blur (BE-2.4) реализованы
-    res = client.post("/v1/fraud-check")
-    assert res.status_code == 501
-    assert res.json()["code"] == "not_implemented"
+def test_unknown_route_404() -> None:
+    # Все три ML-эндпоинта реализованы (deal-rating BE-2.3, blur BE-2.4,
+    # fraud-check BE-2.5) — заглушек больше нет.
+    res = client.post("/v1/no-such-endpoint")
+    assert res.status_code == 404

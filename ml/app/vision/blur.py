@@ -17,7 +17,9 @@ import os
 import time
 
 import cv2
+import imagehash
 import numpy as np
+from PIL import Image
 
 CASCADE_PATH = os.path.join(os.path.dirname(__file__), "cascades", "haarcascade_russian_plate_number.xml")
 
@@ -44,6 +46,13 @@ def _decode(image_bytes: bytes) -> np.ndarray:
     if img is None:
         raise BadImageError("cannot decode image bytes")
     return img
+
+
+def _phash(img: np.ndarray) -> str:
+    """Перцептивный хеш (64-бит, hex) оригинала — сигнатура для детекции дублей
+    фото (BE-2.5/3.6). Считается по исходному изображению (BGR→RGB для PIL)."""
+    pil = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+    return str(imagehash.phash(pil))
 
 
 def _detect_plates(img: np.ndarray) -> list[tuple[int, int, int, int]]:
@@ -105,6 +114,8 @@ def detect_and_blur(image_bytes: bytes, manual_regions: list[dict] | None = None
 
     plate_detected = len(rects) > 0
     regions = _to_normalized(rects, w_img, h_img)
+    # pHash считаем по оригиналу (до блюра) — блюр номера не должен ломать сигнатуру
+    phash = _phash(img)
     blurred = _blur_regions(img.copy(), rects)
 
     ok, buf = cv2.imencode(".jpg", blurred, [cv2.IMWRITE_JPEG_QUALITY, 85])
@@ -114,6 +125,7 @@ def detect_and_blur(image_bytes: bytes, manual_regions: list[dict] | None = None
     return {
         "plate_detected": plate_detected,
         "regions": regions,
+        "phash": phash,
         "blurred_image_b64": base64.b64encode(buf.tobytes()).decode("ascii"),
         "processing_time_ms": int((time.perf_counter() - t0) * 1000),
     }
