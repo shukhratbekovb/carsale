@@ -109,6 +109,9 @@ model User {
   role               UserRole           @default(BUYER)
   verificationStatus VerificationStatus @default(UNVERIFIED) @map("verification_status")
   marketingConsent   Boolean            @default(false) @map("marketing_consent")
+  // Per-type on/off уведомлений (FR-11: «отключить каждый тип отдельно»).
+  // JSON вида { NEW_MESSAGE: bool, PRICE_DROP: bool, LISTING_STATUS: bool }; null → все включены
+  notificationPrefs  Json?              @map("notification_prefs")
   createdAt          DateTime           @default(now()) @map("created_at")
   updatedAt          DateTime           @updatedAt @map("updated_at")
   // Soft delete + анонимизация (ЗРУ-547 ст. 19–22); listings продавца остаются
@@ -292,6 +295,8 @@ model Notification {
   channel     String           @db.VarChar(16)
   payload     Json
   delivered   Boolean          @default(false)
+  // in-app read-статус (для bell/unread); отдельно от delivered (отправка) — BE-7
+  readAt      DateTime?        @map("read_at")
   createdAt   DateTime         @default(now()) @map("created_at")
   deliveredAt DateTime?        @map("delivered_at")
 
