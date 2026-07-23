@@ -58,6 +58,17 @@ function toThreadDto(row: ThreadRow): ThreadDto {
   };
 }
 
+/**
+ * Хук real-time доставки (BE-5.3). Транспорт (WS Hub) регистрирует эмиттер через
+ * setMessageEmitter при старте сервера; сервис не зависит от socket.io напрямую
+ * (инверсия зависимости — иначе тяжёлый socket.io тянется в граф каждого теста).
+ */
+type MessageEmitter = (threadId: string, message: MessageDto) => void;
+let emitter: MessageEmitter | null = null;
+export function setMessageEmitter(fn: MessageEmitter): void {
+  emitter = fn;
+}
+
 function toMessageDto(row: MessageRow): MessageDto {
   return {
     id: row.id,
@@ -116,7 +127,10 @@ export async function sendMessage(
 ): Promise<MessageDto> {
   await assertParticipant(threadId, userId);
   const row = await createMessage(threadId, userId, text);
-  return toMessageDto(row);
+  const dto = toMessageDto(row);
+  // Real-time push участникам комнаты треда (BE-5.3); no-op в REST-only/тестах
+  emitter?.(threadId, dto);
+  return dto;
 }
 
 export async function markRead(threadId: string, userId: string): Promise<void> {
