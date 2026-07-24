@@ -11,11 +11,12 @@ describe('core-api scaffold', () => {
     expect(res.body).toMatchObject({ status: 'ok', service: 'core-api' });
   });
 
-  it('маршруты модулей-заглушек отвечают 501 в едином формате ошибки', async () => {
-    // /me (user, BE-9) пока заглушка; auth/catalog/listing/chat/payment/notification/admin реализованы
-    const res = await request(app).get('/me/profile');
-    expect(res.status).toBe(501);
-    expect(res.body).toMatchObject({ code: 'not_implemented' });
+  it('все 8 модулей реализованы (заглушек не осталось): /me гейтит по auth → 401', async () => {
+    // BE-9 закрыл последнюю заглушку (user). Проба: authed-роут без токена → 401,
+    // а не 501 not_implemented (модуль смонтирован и работает).
+    const res = await request(app).get('/me');
+    expect(res.status).toBe(401);
+    expect(res.body).toMatchObject({ code: 'unauthorized' });
   });
 
   it('неизвестный маршрут отвечает 404 в едином формате ошибки', async () => {

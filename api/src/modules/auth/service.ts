@@ -40,6 +40,10 @@ function toPublic(user: User): PublicUser {
 }
 
 function assertLoginAllowed(user: User): void {
+  // Удалённый аккаунт (BE-9.3): PII анонимизирован, вход/refresh запрещён
+  if (user.deletedAt) {
+    throw new AppError(403, 'account_deleted', 'This account has been deleted');
+  }
   if (user.verificationStatus === 'BANNED') {
     throw new AppError(403, 'account_banned', 'This account is banned');
   }

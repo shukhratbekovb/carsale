@@ -105,3 +105,18 @@ export async function revokeRefreshToken(token: string): Promise<void> {
     // битый/просроченный токен — инвалидировать нечего
   }
 }
+
+/**
+ * Отзыв ВСЕХ refresh-токенов пользователя (BE-9.3: удаление аккаунта).
+ * SCAN по `refresh:{userId}:*` — не блокирует Redis, в отличие от KEYS.
+ */
+export async function revokeAllUserTokens(userId: string): Promise<void> {
+  const redis = getRedis();
+  const pattern = `refresh:${userId}:*`;
+  let cursor = '0';
+  do {
+    const [next, keys] = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+    cursor = next;
+    if (keys.length > 0) await redis.del(...keys);
+  } while (cursor !== '0');
+}
