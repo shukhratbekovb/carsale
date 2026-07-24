@@ -4,6 +4,7 @@ import { env } from './config/env.js';
 import { logger } from './lib/logger.js';
 import { initChatHub } from './modules/chat/ws-hub.js';
 import { startFraudConsumer } from './modules/listing/fraud-consumer.js';
+import { startDeliveryConsumer } from './modules/notification/delivery-consumer.js';
 
 const app = createApp();
 const server = createServer(app);
@@ -19,6 +20,10 @@ initChatHub(server)
     // всё равно поднимается (события накапливаются, разберём при доступности).
     startFraudConsumer().catch((err) => {
       logger.warn({ err }, 'fraud-consumer: failed to subscribe (queue unavailable?)');
+    });
+    // Consumer внешней доставки уведомлений (BE-7.2/7.3) — тоже best-effort.
+    startDeliveryConsumer().catch((err) => {
+      logger.warn({ err }, 'delivery-consumer: failed to subscribe (queue unavailable?)');
     });
   })
   .catch((err) => {

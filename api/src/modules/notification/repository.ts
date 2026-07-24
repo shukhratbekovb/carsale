@@ -60,3 +60,46 @@ export async function setUserPrefs(
 ): Promise<void> {
   await getPrisma().user.update({ where: { id: userId }, data: { notificationPrefs: prefs } });
 }
+
+// --- Доставка email/push (BE-7.2/7.3) ---
+
+/** Email пользователя (для email-канала); null если не задан или удалён. */
+export async function getUserEmail(userId: string): Promise<string | null> {
+  const row = await getPrisma().user.findFirst({
+    where: { id: userId, deletedAt: null },
+    select: { email: true },
+  });
+  return row?.email ?? null;
+}
+
+export interface PushSubRow {
+  id: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+}
+
+export async function listPushSubscriptions(userId: string): Promise<PushSubRow[]> {
+  return getPrisma().pushSubscription.findMany({
+    where: { userId },
+    select: { id: true, endpoint: true, p256dh: true, auth: true },
+  });
+}
+
+/** upsert по endpoint: повторная подписка того же устройства не плодит дубли. */
+export async function savePushSubscription(
+  userId: string,
+  endpoint: string,
+  p256dh: string,
+  auth: string,
+): Promise<void> {
+  await getPrisma().pushSubscription.upsert({
+    where: { endpoint },
+    create: { userId, endpoint, p256dh, auth },
+    update: { userId, p256dh, auth },
+  });
+}
+
+export async function deletePushSubscription(endpoint: string): Promise<void> {
+  await getPrisma().pushSubscription.deleteMany({ where: { endpoint } });
+}

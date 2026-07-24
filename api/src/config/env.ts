@@ -36,6 +36,16 @@ const envSchema = z.object({
   PAYME_MERCHANT_ID: z.string().optional(),
   PAYME_SECRET_KEY: z.string().default('dev-payme-secret'),
 
+  // Доставка уведомлений (BE-7.2/7.3). Без креденшелов — Mock-адаптеры (лог).
+  MAIL_FROM: z.string().default('Carsale <no-reply@carsale.uz>'),
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().int().positive().default(587),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  VAPID_PUBLIC_KEY: z.string().optional(),
+  VAPID_PRIVATE_KEY: z.string().optional(),
+  VAPID_SUBJECT: z.string().default('mailto:no-reply@carsale.uz'),
+
   ESKIZ_API_TOKEN: z.string().optional(),
   // Секреты подписи/хеширования (BE-1.2 / BE-1.4 / BE-1.6). Дефолты приемлемы
   // только для dev/test; в prod задаются через окружение (09-architecture §5).

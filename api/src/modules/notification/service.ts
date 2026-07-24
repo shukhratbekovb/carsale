@@ -1,15 +1,19 @@
 import type { NotificationType, Prisma } from '@prisma/client';
 import { logger } from '../../lib/logger.js';
+import { publishEvent } from '../../lib/queue.js';
+import { env } from '../../config/env.js';
 import {
   countUnread,
   createNotification,
+  deletePushSubscription,
   getUserPrefs,
   listByUser,
   markAllRead as repoMarkAllRead,
   type NotificationRow,
+  savePushSubscription,
   setUserPrefs,
 } from './repository.js';
-import type { PreferencesInput } from './validation.js';
+import type { PreferencesInput, PushSubscriptionInput } from './validation.js';
 
 /**
  * Notification-сервис (BE-7, FR-11). Публичный интерфейс модуля: другие модули
@@ -25,6 +29,9 @@ export const NOTIFICATION_TYPES: NotificationType[] = [
   'PRICE_DROP',
   'LISTING_STATUS',
 ];
+
+/** Очередь внешней доставки (email/push) — разбирается delivery-consumer (BE-7.2/7.3). */
+export const NOTIFICATION_DELIVERY_QUEUE = 'notification_delivery';
 
 export type NotificationPreferences = Record<NotificationType, boolean>;
 
@@ -94,8 +101,22 @@ export async function notify(
       ...(payload.link ? { link: payload.link } : {}),
     };
     await createNotification(userId, type, jsonPayload);
-    // Заглушка доставки email/push (реальные адаптеры — BE-7.2/7.3)
     logger.info({ userId, type }, 'notification delivered (in-app)');
+
+    // Внешняя доставка (email/push) — асинхронно через очередь, чтобы продьюсер
+    // (чат/листинг/платёж) не ждал внешний HTTP. Тип уже прошёл pref-гейт выше.
+    // best-effort: без очереди in-app уже доставлено, доставку канала логируем.
+    try {
+      await publishEvent(NOTIFICATION_DELIVERY_QUEUE, {
+        user_id: userId,
+        type,
+        title: payload.title,
+        message: payload.message,
+        ...(payload.link ? { link: payload.link } : {}),
+      });
+    } catch (err) {
+      logger.warn({ err, userId, type }, 'notify: failed to enqueue external delivery');
+    }
   } catch (err) {
     logger.warn({ err, userId, type }, 'notify failed (non-fatal)');
   }
@@ -114,6 +135,24 @@ export async function markAllRead(userId: string): Promise<void> {
 
 export async function getPreferences(userId: string): Promise<NotificationPreferences> {
   return parsePrefs(await getUserPrefs(userId));
+}
+
+/** Публичный VAPID-ключ для подписки браузера (BE-7.3); null если push не настроен. */
+export function getVapidPublicKey(): string | null {
+  return env.VAPID_PUBLIC_KEY ?? null;
+}
+
+/** Регистрация Web Push подписки браузера (BE-7.3). */
+export async function subscribePush(
+  userId: string,
+  sub: PushSubscriptionInput,
+): Promise<void> {
+  await savePushSubscription(userId, sub.endpoint, sub.keys.p256dh, sub.keys.auth);
+}
+
+/** Отписка (endpoint устройства) — например, при отзыве разрешения в браузере. */
+export async function unsubscribePush(endpoint: string): Promise<void> {
+  await deletePushSubscription(endpoint);
 }
 
 export async function setPreferences(

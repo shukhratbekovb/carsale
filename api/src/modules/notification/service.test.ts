@@ -7,10 +7,15 @@ const repo = vi.hoisted(() => ({
   markAllRead: vi.fn(),
   getUserPrefs: vi.fn(),
   setUserPrefs: vi.fn(),
+  savePushSubscription: vi.fn(),
+  deletePushSubscription: vi.fn(),
 }));
 vi.mock('./repository.js', () => repo);
 
-import { getPreferences, list, notify, setPreferences } from './service.js';
+const queue = vi.hoisted(() => ({ publishEvent: vi.fn() }));
+vi.mock('../../lib/queue.js', () => queue);
+
+import { getPreferences, list, notify, setPreferences, subscribePush } from './service.js';
 
 describe('notification service (BE-7)', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -26,10 +31,34 @@ describe('notification service (BE-7)', () => {
     );
   });
 
-  it('notify: тип отключён в prefs → уведомление НЕ создаётся', async () => {
+  it('notify: включённый тип → in-app + событие внешней доставки в очередь', async () => {
+    repo.getUserPrefs.mockResolvedValue(null);
+    repo.createNotification.mockResolvedValue({});
+    await notify('u1', 'LISTING_STATUS', { title: 'T', message: 'M', link: '/l' });
+    expect(queue.publishEvent).toHaveBeenCalledWith(
+      'notification_delivery',
+      expect.objectContaining({ user_id: 'u1', type: 'LISTING_STATUS', title: 'T', link: '/l' }),
+    );
+  });
+
+  it('notify: тип отключён в prefs → ни in-app, ни доставки', async () => {
     repo.getUserPrefs.mockResolvedValue({ NEW_MESSAGE: false, PRICE_DROP: true, LISTING_STATUS: true });
     await notify('u1', 'NEW_MESSAGE', { title: 'T', message: 'M' });
     expect(repo.createNotification).not.toHaveBeenCalled();
+    expect(queue.publishEvent).not.toHaveBeenCalled();
+  });
+
+  it('notify: сбой очереди доставки не роняет (in-app уже сохранён)', async () => {
+    repo.getUserPrefs.mockResolvedValue(null);
+    repo.createNotification.mockResolvedValue({});
+    queue.publishEvent.mockRejectedValue(new Error('rabbit down'));
+    await expect(notify('u1', 'NEW_MESSAGE', { title: 'T', message: 'M' })).resolves.toBeUndefined();
+    expect(repo.createNotification).toHaveBeenCalled();
+  });
+
+  it('subscribePush: сохраняет endpoint+ключи', async () => {
+    await subscribePush('u1', { endpoint: 'https://push/1', keys: { p256dh: 'p', auth: 'a' } });
+    expect(repo.savePushSubscription).toHaveBeenCalledWith('u1', 'https://push/1', 'p', 'a');
   });
 
   it('notify: best-effort — сбой репозитория не пробрасывается', async () => {

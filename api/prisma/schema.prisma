@@ -117,14 +117,15 @@ model User {
   // Soft delete + анонимизация (ЗРУ-547 ст. 19–22); listings продавца остаются
   deletedAt          DateTime?          @map("deleted_at")
 
-  listings      Listing[]
-  buyerThreads  ChatThread[]   @relation("ThreadBuyer")
-  sellerThreads ChatThread[]   @relation("ThreadSeller")
-  messages      Message[]
-  payments      Payment[]
-  notifications Notification[]
-  savedSearches SavedSearch[]
-  favorites     Favorite[]
+  listings          Listing[]
+  buyerThreads      ChatThread[]       @relation("ThreadBuyer")
+  sellerThreads     ChatThread[]       @relation("ThreadSeller")
+  messages          Message[]
+  payments          Payment[]
+  notifications     Notification[]
+  savedSearches     SavedSearch[]
+  favorites         Favorite[]
+  pushSubscriptions PushSubscription[]
 
   @@index([verificationStatus])
   @@index([email])
@@ -289,6 +290,21 @@ model Payment {
   @@index([userId])
   @@index([listingId])
   @@map("payments")
+}
+
+// Web Push подписки браузера (BE-7.3, VAPID). Одна на endpoint устройства.
+model PushSubscription {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  endpoint  String   @unique @db.VarChar(512)
+  p256dh    String   @db.VarChar(256)
+  auth      String   @db.VarChar(128)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_subscriptions")
 }
 
 model Notification {
