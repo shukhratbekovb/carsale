@@ -1,0 +1,78 @@
+# SAST + dependency scanning (BE-10.2, NFR-16). Два уровня:
+#  1. CodeQL — статический анализ кода (js/ts: api+web, python: ml) на push/PR
+#     и еженедельно (ловит новые advisory по коду, не только по зависимостям).
+#  2. Dependency audit — уязвимости в ПРОД-зависимостях (--omit=dev): dev-инструменты
+#     (vitest/esbuild) не деплоятся, их CVE не блокируют. api гейтится жёстко
+#     (сейчас чист); web — не блокирует (известные next@14, ждут миграции next@16,
+#     см. HANDOFF) — сообщает, но не роняет.
+name: Security SAST
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # еженедельно, понедельник 06:00 UTC — ловим свежие advisory на неизменном коде
+    - cron: "0 6 * * 1"
+
+jobs:
+  codeql:
+    name: CodeQL (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        # js/ts покрывает api и web; python — ml. Интерпретируемые языки не
+        # требуют build-шага (autobuild не нужен).
+        language: [javascript-typescript, python]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          language: ${{ matrix.language }}
+          queries: security-extended
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
+
+  dependency-audit:
+    name: Dependency audit (prod deps)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # выравниваем мажор npm с генератором lockfile (как в остальных workflow)
+      - name: Use npm 11 (lockfile generator version)
+        run: npm install -g npm@^11
+
+      # api: блокирующий гейт по прод-зависимостям (dev-only CVE исключены)
+      - name: Install api deps
+        working-directory: api
+        run: npm ci
+
+      - name: Audit api (prod, high+)
+        working-directory: api
+        run: npm audit --omit=dev --audit-level=high
+
+      # web: НЕ блокирует — известные next@14 high ждут миграции next@16 (отдельная
+      # задача, см. HANDOFF). Прогоняем ради видимости в логах CI.
+      - name: Install web deps
+        working-directory: web
+        run: npm ci
+
+      - name: Audit web (prod, high+) — informational
+        working-directory: web
+        continue-on-error: true
+        run: npm audit --omit=dev --audit-level=high
