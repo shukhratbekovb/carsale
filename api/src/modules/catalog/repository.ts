@@ -29,7 +29,11 @@ function buildWhere(q: ListQuery): Prisma.ListingWhereInput {
   }
 
   const where: Prisma.ListingWhereInput = { status: 'PUBLISHED' };
+  // Объявление обязано иметь vehicle (иначе toPublicListing бросит → 500 всей
+  // выдачи). Поле-фильтр (make/model/…) уже подразумевает существование связи;
+  // без него требуем её явно, чтобы битые данные не роняли каталог.
   if (Object.keys(vehicle).length > 0) where.vehicle = vehicle;
+  else where.vehicle = { isNot: null };
   const price = range(q.priceMin, q.priceMax);
   if (price) where.priceUzs = price;
   if (q.dealRating) where.dealRatingLabel = q.dealRating;
@@ -65,8 +69,9 @@ export async function findPublished(
 }
 
 export async function findByIdPublic(id: string): Promise<PublicListingRow | null> {
+  // vehicle обязан существовать — иначе toPublicListing бросит; нет vehicle → 404
   return getPrisma().listing.findFirst({
-    where: { id, status: 'PUBLISHED' },
+    where: { id, status: 'PUBLISHED', vehicle: { isNot: null } },
     select: publicListingSelect,
   });
 }
@@ -84,7 +89,7 @@ export async function findSimilar(q: ListQuery, limit = 4): Promise<PublicListin
     if (sameMake.length > 0) return sameMake;
   }
   return prisma.listing.findMany({
-    where: { status: 'PUBLISHED' },
+    where: { status: 'PUBLISHED', vehicle: { isNot: null } },
     select: publicListingSelect,
     orderBy: { createdAt: 'desc' },
     take: limit,
