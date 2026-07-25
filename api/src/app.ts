@@ -5,6 +5,7 @@ import { logger } from './lib/logger.js';
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
 import { rateLimit } from './middleware/rate-limit.js';
 import { requestId } from './middleware/request-id.js';
+import { securityHeaders } from './middleware/security-headers.js';
 import { adminRouter } from './modules/admin/router.js';
 import { authRouter } from './modules/auth/router.js';
 import { catalogRouter } from './modules/catalog/router.js';
@@ -19,6 +20,8 @@ export function createApp(): express.Express {
 
   app.disable('x-powered-by');
   app.use(requestId);
+  // Заголовки безопасности до всех роутов (BE-10.5, NFR-12) — покрывают и /health
+  app.use(securityHeaders);
   app.use(pinoHttp({ logger, genReqId: (_req, res) => res.locals.requestId as string }));
   app.use(express.json({ limit: '1mb' }));
   app.use(cookieParser());
