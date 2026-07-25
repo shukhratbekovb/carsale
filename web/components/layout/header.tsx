@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { useTranslations } from 'next-intl';
+import { AuthNav } from '@/components/layout/auth-nav';
 import { LanguageSwitcher } from '@/components/layout/language-switcher';
 import { LocationPicker } from '@/components/layout/location-picker';
 import { NotificationBell } from '@/components/notifications/notification-bell';
@@ -51,12 +52,7 @@ export function Header() {
           >
             {t('sell')}
           </Link>
-          <Link
-            href="/auth/login"
-            className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-md border px-3 text-sm font-medium hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-4"
-          >
-            {t('login')}
-          </Link>
+          <AuthNav />
         </div>
       </div>
     </header>

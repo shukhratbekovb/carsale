@@ -194,7 +194,9 @@
     "myListings": "Мои объявления",
     "chat": "Сообщения",
     "sell": "Продать авто",
-    "login": "Войти"
+    "login": "Войти",
+    "logout": "Выйти",
+    "account": "Кабинет"
   },
   "languageSwitcher": {
     "label": "Язык"

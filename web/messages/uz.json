@@ -194,7 +194,9 @@
     "myListings": "Mening eʼlonlarim",
     "chat": "Xabarlar",
     "sell": "Avto sotish",
-    "login": "Kirish"
+    "login": "Kirish",
+    "logout": "Chiqish",
+    "account": "Kabinet"
   },
   "languageSwitcher": {
     "label": "Til"

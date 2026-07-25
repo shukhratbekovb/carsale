@@ -18,7 +18,10 @@ import {
   startOtpRequest,
   submitOtpFailure,
 } from '@/lib/auth/otp-flow';
-import { mockSendOtp, mockVerifyOtp } from '@/lib/mock/otp';
+import { ApiError } from '@/lib/api/client';
+import { sendOtp, verifyOtp } from '@/lib/auth/auth-api';
+import { useSession } from '@/lib/auth/session';
+import { readConsents } from '@/lib/gdpr/consent';
 import { createOtpCodeSchema } from '@/lib/validation/auth';
 import type { OtpFlowState } from '@/types/auth';
 
@@ -60,6 +63,7 @@ export function OtpForm() {
   const t = useTranslations('auth');
   const tValidation = useTranslations('validation');
   const router = useRouter();
+  const { login } = useSession();
   const searchParams = useSearchParams();
   const phone = searchParams.get('phone');
   const returnTo = searchParams.get('return');
@@ -91,10 +95,15 @@ export function OtpForm() {
 
   // Фактическая отправка SMS при первом входе в CODE_SENT (единственный сайд-эффект
   // здесь; ref защищает от повторного вызова из-за Strict Mode двойного рендера).
+  // otp_cooldown (код уже отправлен недавно, напр. возврат на страницу) — не
+  // ошибка: код всё ещё валиден, просто продолжаем ввод.
   useEffect(() => {
     if (!phone || sentRef.current) return;
     sentRef.current = true;
-    mockSendOtp(phone).catch(() => dispatch({ type: 'SMS_UNAVAILABLE' }));
+    sendOtp(phone).catch((err: unknown) => {
+      if (err instanceof ApiError && err.code === 'otp_cooldown') return;
+      dispatch({ type: 'SMS_UNAVAILABLE' });
+    });
   }, [phone]);
 
   // Тик раз в секунду — источник "now" для обратных отсчётов resend/lockout и
@@ -123,14 +132,23 @@ export function OtpForm() {
   async function onSubmit(values: CodeFormValues) {
     setIsVerifying(true);
     try {
-      const ok = await mockVerifyOtp(currentPhone, values.code);
-      if (ok) {
-        // Мок-успех: реальной сессии/JWT ещё нет (нет Core API) — просто ведём
-        // пользователя дальше. Настоящая сессия подключается отдельной задачей.
-        router.push(returnTo || '/');
-        return;
+      // Маркетинговое согласие пользователь выбрал на шаге ввода номера
+      // (сохранено на устройстве); ПД-согласие обязательно и всегда true.
+      const { accessToken, user } = await verifyOtp({
+        phone: currentPhone,
+        code: values.code,
+        marketingConsent: readConsents().marketing,
+      });
+      login(accessToken, user); // реальная JWT-сессия (§5)
+      router.push(returnTo || '/');
+    } catch (err: unknown) {
+      if (err instanceof ApiError && err.code === 'sms_unavailable') {
+        dispatch({ type: 'SMS_UNAVAILABLE' });
+      } else {
+        // invalid_otp / otp_expired / otp_locked → расходуем попытку (reducer
+        // заблокирует после 3-й, как и Core); прочие сбои — тот же путь.
+        dispatch({ type: 'FAIL', now: Date.now() });
       }
-      dispatch({ type: 'FAIL', now: Date.now() });
       reset({ code: '' });
     } finally {
       setIsVerifying(false);
@@ -140,7 +158,7 @@ export function OtpForm() {
   async function handleResend() {
     if (!canResendOtp(state, Date.now())) return;
     dispatch({ type: 'RESEND', now: Date.now() });
-    await mockSendOtp(currentPhone).catch(() => dispatch({ type: 'SMS_UNAVAILABLE' }));
+    await sendOtp(currentPhone).catch(() => dispatch({ type: 'SMS_UNAVAILABLE' }));
   }
 
   if (state.stage === 'LOCKED') {

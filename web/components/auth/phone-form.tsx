@@ -10,7 +10,6 @@ import { FormField } from '@/components/forms/form-field';
 import { Button } from '@/components/ui/button';
 import { Link, useRouter } from '@/i18n/navigation';
 import { saveConsents } from '@/lib/gdpr/consent';
-import { mockSendOtp } from '@/lib/mock/otp';
 import { createPhoneSchema, createRegistrationConsentSchema } from '@/lib/validation/auth';
 
 type PhoneFormValues = {
@@ -49,21 +48,18 @@ export function PhoneForm({ returnTo }: PhoneFormProps) {
     defaultValues: { phone: '', personalDataConsent: false, marketingConsent: false },
   });
 
-  async function onSubmit(values: PhoneFormValues) {
+  function onSubmit(values: PhoneFormValues) {
     setIsSubmitting(true);
-    try {
-      await mockSendOtp(values.phone);
-      // Согласия фиксируются на устройстве в момент регистрации, до перехода
-      // на OTP-шаг: базовое согласие к этому моменту гарантированно дано
-      // (схема не пропустит false), маркетинговое — по выбору пользователя.
-      saveConsents({ personalData: true, marketing: values.marketingConsent });
-      const params = new URLSearchParams();
-      params.set('phone', values.phone);
-      if (returnTo) params.set('return', returnTo);
-      router.push(`/auth/otp?${params.toString()}`);
-    } finally {
-      setIsSubmitting(false);
-    }
+    // Согласия фиксируются на устройстве в момент регистрации, до перехода на
+    // OTP-шаг: базовое согласие к этому моменту гарантированно дано (схема не
+    // пропустит false), маркетинговое — по выбору пользователя. Их прочтёт
+    // otp-form при вызове verify. Само SMS отправляет OTP-страница (единый
+    // отправитель — иначе был бы двойной send и мгновенный otp_cooldown).
+    saveConsents({ personalData: true, marketing: values.marketingConsent });
+    const params = new URLSearchParams();
+    params.set('phone', values.phone);
+    if (returnTo) params.set('return', returnTo);
+    router.push(`/auth/otp?${params.toString()}`);
   }
 
   return (

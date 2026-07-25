@@ -11,6 +11,7 @@ import { ChatWindow } from '@/components/chat/chat-window';
 import { ListingCard } from '@/components/domain/listing-card';
 import { Footer } from '@/components/layout/footer';
 import { Header } from '@/components/layout/header';
+import { SessionProvider } from '@/lib/auth/session';
 import { NotificationBell } from '@/components/notifications/notification-bell';
 import { GatewaySelect } from '@/components/payment/gateway-select';
 import { GdprSection } from '@/components/profile/gdpr-section';
@@ -72,7 +73,12 @@ vi.mock('@/lib/mock/notifications', () => ({
 }));
 
 test('Header has no axe violations', async () => {
-  const { container } = render(<Header />);
+  // Header содержит AuthNav (useSession) — оборачиваем в SessionProvider.
+  const { container } = render(
+    <SessionProvider>
+      <Header />
+    </SessionProvider>,
+  );
   expect(await axe(container, AXE_OPTIONS)).toHaveNoViolations();
 });
 
