@@ -3,6 +3,7 @@ import express from 'express';
 import { pinoHttp } from 'pino-http';
 import { logger } from './lib/logger.js';
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
+import { rateLimit } from './middleware/rate-limit.js';
 import { requestId } from './middleware/request-id.js';
 import { adminRouter } from './modules/admin/router.js';
 import { authRouter } from './modules/auth/router.js';
@@ -25,6 +26,11 @@ export function createApp(): express.Express {
   app.get('/health', (_req, res) => {
     res.json({ status: 'ok', service: 'core-api', uptime: process.uptime() });
   });
+
+  // Rate-limit гостя 60 req/мин на IP (BE-0.7, NFR-14) — после /health (мониторинг
+  // не лимитируем), до роутов. Без Redis fail-open. Auth-тир 300 req/мин подключит
+  // отдельный лимитер с keyFn = user id, когда понадобится (фабрика уже готова).
+  app.use(rateLimit());
 
   app.use('/auth', authRouter);
   // catalog (публичное чтение GET /listings) монтируется раньше listing (мутации продавца):

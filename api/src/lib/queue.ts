@@ -101,6 +101,9 @@ async function bindConsumer(ch: Channel, queueName: string, handler: QueueHandle
       ch.nack(msg, false, false);
     }
   });
+  // Логируем ФАКТ биндинга (initial или после reconnect) — достоверный сигнал,
+  // в отличие от «registered» в consumeQueue, который резолвится и при отложенном ретрае
+  logger.info({ queue: queueName }, 'rabbitmq: consumer bound');
 }
 
 /** Публикация события: JSON, persistent, в durable-очередь. */
@@ -117,11 +120,20 @@ export async function publishEvent(queueName: string, payload: object): Promise<
  * Подписка на очередь: payload парсится из JSON, успешный handler → ack,
  * ошибка handler'а (или битый JSON) → лог + nack(requeue=false).
  * Консьюмер переживает reconnect — регистрация сохраняется.
+ *
+ * Если брокер недоступен на момент подписки (типично: RabbitMQ ещё стартует),
+ * НЕ бросаем — регистрация уже в `consumers`, планируем ретрай через
+ * scheduleReconnect (иначе consumer не поднялся бы даже после появления брокера).
  */
 export async function consumeQueue(queueName: string, handler: QueueHandler): Promise<void> {
   consumers.set(queueName, handler);
-  const ch = await getChannel();
-  await bindConsumer(ch, queueName, handler);
+  try {
+    const ch = await getChannel();
+    await bindConsumer(ch, queueName, handler);
+  } catch (err) {
+    logger.warn({ err, queue: queueName }, 'rabbitmq: initial subscribe failed — scheduling retry');
+    scheduleReconnect();
+  }
 }
 
 /** Graceful shutdown / тесты. */

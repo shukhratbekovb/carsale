@@ -121,4 +121,15 @@ describe('queue wrapper (BE-0.8, at-least-once — 09-architecture §5)', () => 
     expect(handler).not.toHaveBeenCalled();
     expect(amqpMocks.channel.nack).toHaveBeenCalledWith(msg, false, false);
   });
+
+  // Брокер недоступен на старте (типично: RabbitMQ ещё поднимается) — раньше
+  // consumeQueue бросал и consumer не подписывался даже после появления брокера.
+  it('consumeQueue: сбой первичного подключения → НЕ бросает (планирует ретрай)', async () => {
+    vi.resetModules();
+    const failConnect = vi.fn().mockRejectedValue(new Error('ECONNRESET'));
+    vi.doMock('amqplib', () => ({ default: { connect: failConnect }, connect: failConnect }));
+    const { consumeQueue: cq } = await import('./queue.js');
+    await expect(cq('retry-q', vi.fn(async () => {}))).resolves.toBeUndefined();
+    expect(failConnect).toHaveBeenCalled();
+  });
 });

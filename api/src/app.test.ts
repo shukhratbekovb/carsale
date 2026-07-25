@@ -1,5 +1,15 @@
 import request from 'supertest';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+// Rate-limit смонтирован глобально (BE-0.7); в юнит-тесте отключаем его Redis —
+// fail-open, чтобы app.test не зависел от инфраструктуры.
+vi.mock('./lib/redis.js', () => ({
+  isRedisConfigured: () => false,
+  getRedis: () => {
+    throw new Error('redis disabled in app.test');
+  },
+}));
+
 import { createApp } from './app.js';
 
 describe('core-api scaffold', () => {

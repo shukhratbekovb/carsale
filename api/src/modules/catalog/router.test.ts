@@ -12,6 +12,12 @@ const repo = vi.hoisted(() => ({
 }));
 vi.mock('./repository.js', () => repo);
 
+// Кэш отключаем в роутер-тесте (miss + no-op set) — проверяем форму ответа, не Redis
+vi.mock('./cache.js', () => ({
+  getCachedCatalog: vi.fn(async () => null),
+  setCachedCatalog: vi.fn(async () => undefined),
+}));
+
 import { Prisma } from '@prisma/client';
 import type { PublicListingRow } from './mapper.js';
 import { errorHandler, notFoundHandler } from '../../middleware/error-handler.js';

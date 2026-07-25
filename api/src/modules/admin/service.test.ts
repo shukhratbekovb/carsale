@@ -16,6 +16,8 @@ vi.mock('./repository.js', () => repo);
 const notif = vi.hoisted(() => ({ notify: vi.fn() }));
 vi.mock('../notification/service.js', () => notif);
 
+vi.mock('../catalog/cache.js', () => ({ invalidateCatalog: vi.fn() }));
+
 import { approveListing, rejectListing, setUserStatus } from './service.js';
 
 describe('admin service (BE-8)', () => {

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { asyncHandler } from '../../lib/async-handler.js';
 import { AppError } from '../../lib/errors.js';
+import { getCachedCatalog, setCachedCatalog } from './cache.js';
 import { toPublicListing } from './mapper.js';
 import { findByIdPublic, findPublished, findSimilar } from './repository.js';
 import { listQuerySchema } from './validation.js';
@@ -20,8 +21,17 @@ catalogRouter.get(
   '/',
   asyncHandler(async (req, res) => {
     const q = listQuerySchema.parse(req.query);
+    // Ключ кэша — по канонизированному валидированному запросу (порядок query-
+    // параметров не влияет), TTL 60с (BE-4.2)
+    const canonical = JSON.stringify(q);
+    const cached = await getCachedCatalog(canonical);
+    if (cached) {
+      res.json(cached);
+      return;
+    }
+
     const { items, total } = await findPublished(q);
-    const body = {
+    const body: Record<string, unknown> = {
       items: items.map(toPublicListing),
       total,
       page: q.page,
@@ -29,9 +39,9 @@ catalogRouter.get(
     };
     if (total === 0) {
       const similar = await findSimilar(q);
-      res.json({ ...body, similar: similar.map(toPublicListing) });
-      return;
+      body['similar'] = similar.map(toPublicListing);
     }
+    await setCachedCatalog(canonical, body);
     res.json(body);
   }),
 );

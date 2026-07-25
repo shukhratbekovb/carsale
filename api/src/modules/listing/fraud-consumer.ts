@@ -2,6 +2,7 @@ import { logger } from '../../lib/logger.js';
 import { mlFraudCheck } from '../../lib/ml-client.js';
 import { findDuplicate } from '../../lib/phash.js';
 import { consumeQueue } from '../../lib/queue.js';
+import { invalidateCatalog } from '../catalog/cache.js';
 import { notify } from '../notification/service.js';
 import { findFraudSource, findOtherPhotoHashes, saveFraudDecision } from './repository.js';
 import { FRAUD_CHECK_QUEUE } from './service.js';
@@ -73,6 +74,9 @@ export async function handleFraudCheck(payload: unknown): Promise<void> {
     computedAt: new Date(),
   });
 
+  // Новое объявление появилось в каталоге → сбросить кэш (BE-4.2)
+  if (!flagged) await invalidateCatalog();
+
   await notify(
     src.sellerId,
     'LISTING_STATUS',
@@ -94,6 +98,8 @@ export async function handleFraudCheck(payload: unknown): Promise<void> {
 
 /** Регистрирует consumer очереди fraud_check (вызывается при старте сервера). */
 export async function startFraudConsumer(): Promise<void> {
+  // Фактический бинд логирует queue-lib («consumer bound») — здесь может быть
+  // отложенный ретрай, если брокер ещё не поднят
   await consumeQueue(FRAUD_CHECK_QUEUE, (payload) => handleFraudCheck(payload));
-  logger.info({ queue: FRAUD_CHECK_QUEUE }, 'fraud-consumer: subscribed');
+  logger.info({ queue: FRAUD_CHECK_QUEUE }, 'fraud-consumer: registered');
 }

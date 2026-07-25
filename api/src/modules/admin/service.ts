@@ -1,5 +1,6 @@
 import type { VerificationStatus } from '@prisma/client';
 import { AppError } from '../../lib/errors.js';
+import { invalidateCatalog } from '../catalog/cache.js';
 import { assertTransition } from '../listing/status-machine.js';
 import { notify } from '../notification/service.js';
 import {
@@ -53,6 +54,7 @@ export async function approveListing(id: string): Promise<{ status: string }> {
   assertTransition(target.status, 'PUBLISHED');
 
   await decideListing(id, { status: 'PUBLISHED', publishedAt: new Date(), fraudFlag: false });
+  await invalidateCatalog(); // объявление появилось в каталоге (BE-4.2)
   await notify(target.sellerId, 'LISTING_STATUS', {
     title: 'Объявление опубликовано',
     message: 'Ваше объявление прошло модерацию и опубликовано в каталоге.',

@@ -84,6 +84,8 @@ export async function handleDelivery(payload: unknown): Promise<void> {
 }
 
 export async function startDeliveryConsumer(): Promise<void> {
+  // Фактический бинд логирует queue-lib («consumer bound»); здесь может быть
+  // отложенный ретрай, если брокер ещё не поднят
   await consumeQueue(NOTIFICATION_DELIVERY_QUEUE, (payload) => handleDelivery(payload));
-  logger.info({ queue: NOTIFICATION_DELIVERY_QUEUE }, 'delivery-consumer: subscribed');
+  logger.info({ queue: NOTIFICATION_DELIVERY_QUEUE }, 'delivery-consumer: registered');
 }

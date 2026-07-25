@@ -14,6 +14,7 @@ const notif = vi.hoisted(() => ({ notify: vi.fn() }));
 vi.mock('../notification/service.js', () => notif);
 
 vi.mock('../../lib/queue.js', () => ({ consumeQueue: vi.fn() }));
+vi.mock('../catalog/cache.js', () => ({ invalidateCatalog: vi.fn() }));
 
 import { handleFraudCheck } from './fraud-consumer.js';
 
