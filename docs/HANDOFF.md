@@ -331,6 +331,16 @@
     - **Осталось по backend**: BE-10.1 (k6) / 10.2 (SAST+pentest) / 10.3 (бэкапы+restore-drill) / 10.4 (Prometheus/Grafana) / 10.5 **TLS-часть** (сертификаты/деплой) + BE-4.5 (1М строк, p95) + мелочи (facets-эндпоинт для фильтров, продление EXPIRED, leader-lock, боевой queryStatus, пагинация /admin/audit)
     - **Следующий шаг**: продолжить §5-интеграцию фронта (**`/my/listings`** через `authorizedFetch`, **favorites/home**) — самый ценный путь к продукту; либо ещё BE-10 (10.4 метрики / 10.3 бэкапы — автономные, api/infra-only)
 
+47. **BE-10.4 — 2026-07-25 (Prometheus-метрики /metrics)**:
+    - Продолжение BE-10, снова api-only (машину сегодня дважды ронял web dev + падал Docker). Наблюдаемость для прод-готовности (NFR-26)
+    - **`lib/metrics.ts`** — единый `Registry` (`service=core-api`): дефолтные метрики Node/процесса (CPU, RSS, event-loop lag, GC) + гистограмма `http_request_duration_seconds` (лейблы `method`/`route`/`status_code`, бакеты вокруг p95≤2с NFR-1). Дефолтные метрики **не собираем в тестах** (их таймеры мешали бы vitest — гейт `NODE_ENV!=='test'`)
+    - **`middleware/metrics.ts`** — таймер на каждый запрос, запись на `finish` под **нормализованным шаблоном маршрута** (`req.baseUrl+req.route.path` → `/listings/:id`, не сырой id — защита кардинальности); несопоставленные → `'unmatched'`
+    - **`app.ts`** — middleware до роутов; `GET /metrics` до rate-limit (скрейп не лимитируем, как `/health`). В комментарии: в проде эндпоинт закрыть сетью/фаерволом. Зависимость: `prom-client`
+    - Проверено: typecheck чист, **vitest 277/277** (+1). **Живой смоук**: `/metrics` → 200 `text/plain; version=0.0.4` с дефолтными метриками (`process_cpu_seconds_total`, `nodejs_eventloop_lag_seconds`, heap) и HTTP-гистограммой с шаблонами `/health`, `/listings/`, `/listings/:id` от реального трафика
+    - **Известный минор**: пути, отклонённые middleware до матча роута (напр. `/me` 401), получают более грубый лейбл `route="/"` — ограничено по кардинальности, не риск. Grafana-дашборды/алерты (вторая половина BE-10.4) — отдельный ops-шаг (нужен запущенный Prometheus/Grafana)
+    - **Осталось по backend**: BE-10.1 (k6) / 10.2 (SAST+pentest) / 10.3 (бэкапы+restore-drill) / 10.4 **Grafana+алерты** / 10.5 **TLS-часть** + BE-4.5 (1М строк, p95) + мелочи (facets, продление EXPIRED, leader-lock, боевой queryStatus, пагинация /admin/audit)
+    - **Следующий шаг**: §5-фронт (**`/my/listings`**/**favorites**/**home** на реальных данных) — ценнее для продукта; либо BE-10.3 бэкапы (api/infra-only)
+
 ## В работе / следующий шаг
 
 Согласно frontend-plan.md §13 и §11:
