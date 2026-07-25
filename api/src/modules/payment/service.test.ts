@@ -1,24 +1,27 @@
 import { Prisma } from '@prisma/client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../../config/env.js', () => ({ env: { NODE_ENV: 'test', WEB_BASE_URL: 'http://localhost:3100' } }));
+vi.mock('../../config/env.js', () => ({
+  env: { NODE_ENV: 'test', WEB_BASE_URL: 'http://localhost:3100', PAYMENT_POLL_STALE_MS: 300000 },
+}));
 
 const repo = vi.hoisted(() => ({
   createPayment: vi.fn(),
   findPayment: vi.fn(),
   setPaymentStatus: vi.fn(),
   findListingForPayment: vi.fn(),
+  findStaleProcessingPayments: vi.fn(),
 }));
 vi.mock('./repository.js', () => repo);
 
-const gw = vi.hoisted(() => ({ createInvoice: vi.fn(), parseWebhook: vi.fn() }));
+const gw = vi.hoisted(() => ({ createInvoice: vi.fn(), parseWebhook: vi.fn(), queryStatus: vi.fn() }));
 vi.mock('./gateway.js', () => ({ getGateway: () => gw }));
 
 const notif = vi.hoisted(() => ({ notify: vi.fn() }));
 vi.mock('../notification/service.js', () => notif);
 
 import { AppError } from '../../lib/errors.js';
-import { createPayment, handleWebhook } from './service.js';
+import { createPayment, handleWebhook, reconcileStalePaymentsJob } from './service.js';
 
 const decimal = (n: number) => ({ toNumber: () => n }) as unknown as Prisma.Decimal;
 
@@ -130,6 +133,66 @@ describe('payment service (BE-6.3/6.4/6.6)', () => {
         throw new AppError(401, 'invalid_signature', 'bad');
       });
       await expect(handleWebhook('click', {})).rejects.toMatchObject({ status: 401, code: 'invalid_signature' });
+    });
+  });
+
+  describe('reconcileStalePaymentsJob (BE-6.5)', () => {
+    // clearAllMocks не сбрасывает implementations — снимаем возможный
+    // mockRejectedValue от webhook-теста P2002, чтобы settle резолвился
+    beforeEach(() => repo.setPaymentStatus.mockReset());
+
+    const stalePayment = (over: Record<string, unknown> = {}) => ({
+      id: 'pay-1',
+      userId: 'u1',
+      listingId: 'lst-1',
+      status: 'PROCESSING',
+      gateway: 'CLICK',
+      gatewayTransactionId: null,
+      amountUzs: decimal(45000),
+      ...over,
+    });
+
+    it('нет зависших → шлюз не опрашивается', async () => {
+      repo.findStaleProcessingPayments.mockResolvedValue([]);
+      await reconcileStalePaymentsJob();
+      expect(gw.queryStatus).not.toHaveBeenCalled();
+    });
+
+    it('шлюз вернул success → SUCCESS + квитанция (то же ядро, что webhook)', async () => {
+      repo.findStaleProcessingPayments.mockResolvedValue([stalePayment()]);
+      gw.queryStatus.mockResolvedValue({ outcome: 'success', gatewayTransactionId: 'g-99' });
+      await reconcileStalePaymentsJob();
+      expect(gw.queryStatus).toHaveBeenCalledWith({ transactionId: 'pay-1', gatewayTransactionId: null });
+      expect(repo.setPaymentStatus).toHaveBeenCalledWith('pay-1', 'SUCCESS', 'g-99');
+      expect(notif.notify).toHaveBeenCalledWith('u1', 'LISTING_STATUS', expect.objectContaining({ title: 'Оплата получена' }));
+    });
+
+    it('шлюз не знает (unknown) → платёж не трогаем', async () => {
+      repo.findStaleProcessingPayments.mockResolvedValue([stalePayment()]);
+      gw.queryStatus.mockResolvedValue({ outcome: 'unknown' });
+      await reconcileStalePaymentsJob();
+      expect(repo.setPaymentStatus).not.toHaveBeenCalled();
+      expect(notif.notify).not.toHaveBeenCalled();
+    });
+
+    it('без свежего gatewayTransactionId в ответе — берём известный из платежа', async () => {
+      repo.findStaleProcessingPayments.mockResolvedValue([stalePayment({ gatewayTransactionId: 'g-known' })]);
+      gw.queryStatus.mockResolvedValue({ outcome: 'cancelled' });
+      await reconcileStalePaymentsJob();
+      expect(repo.setPaymentStatus).toHaveBeenCalledWith('pay-1', 'CANCELLED', 'g-known');
+    });
+
+    it('сбой опроса одного платежа не роняет обработку остальных', async () => {
+      repo.findStaleProcessingPayments.mockResolvedValue([
+        stalePayment({ id: 'pay-1' }),
+        stalePayment({ id: 'pay-2' }),
+      ]);
+      gw.queryStatus
+        .mockRejectedValueOnce(new Error('gateway down'))
+        .mockResolvedValueOnce({ outcome: 'success', gatewayTransactionId: 'g-2' });
+      await reconcileStalePaymentsJob();
+      expect(repo.setPaymentStatus).toHaveBeenCalledTimes(1);
+      expect(repo.setPaymentStatus).toHaveBeenCalledWith('pay-2', 'SUCCESS', 'g-2');
     });
   });
 });

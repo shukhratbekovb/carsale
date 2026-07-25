@@ -43,6 +43,23 @@ export async function findPayment(id: string): Promise<PaymentRow | null> {
 }
 
 /**
+ * Зависшие платежи для polling-fallback (BE-6.5): в PROCESSING дольше, чем cutoff
+ * (webhook не пришёл). «Сначала старые», ограничение размера пачки — чтобы один
+ * тик реконсиляции не опрашивал шлюз бесконечно.
+ */
+export async function findStaleProcessingPayments(
+  cutoff: Date,
+  limit: number,
+): Promise<PaymentRow[]> {
+  return getPrisma().payment.findMany({
+    where: { status: 'PROCESSING', updatedAt: { lt: cutoff } },
+    select: paymentSelect,
+    orderBy: { updatedAt: 'asc' },
+    take: limit,
+  });
+}
+
+/**
  * Смена статуса + (опционально) фиксация gateway_transaction_id.
  * UNIQUE на gateway_transaction_id — вторая транзакция шлюза с тем же id
  * не сможет записаться в другой платёж (защита идемпотентности на уровне БД).

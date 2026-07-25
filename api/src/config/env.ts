@@ -28,6 +28,10 @@ const envSchema = z.object({
   // retry Deal Rating — каждые 5 мин.
   LISTING_EXPIRE_INTERVAL_MS: z.coerce.number().int().positive().default(60 * 60 * 1000),
   DEALRATING_RETRY_INTERVAL_MS: z.coerce.number().int().positive().default(5 * 60 * 1000),
+  // Polling-fallback платежей (BE-6.5): как часто опрашивать шлюз и через какой
+  // «тихий» интервал PROCESSING-платёж считается зависшим (webhook не пришёл).
+  PAYMENT_POLL_INTERVAL_MS: z.coerce.number().int().positive().default(5 * 60 * 1000),
+  PAYMENT_POLL_STALE_MS: z.coerce.number().int().positive().default(5 * 60 * 1000),
 
   // Базовый URL фронта — для return_url и sim-URL платёжного флоу (BE-6)
   WEB_BASE_URL: z.string().url().default('http://localhost:3100'),

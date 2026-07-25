@@ -8,6 +8,7 @@ import {
   createPayment as repoCreatePayment,
   findListingForPayment,
   findPayment,
+  findStaleProcessingPayments,
   type PaymentRow,
   setPaymentStatus,
 } from './repository.js';
@@ -116,13 +117,26 @@ export async function handleWebhook(
     return { status: payment.status, idempotent: true };
   }
 
-  const target = OUTCOME_TO_STATUS[event.outcome];
+  return settlePayment(payment, OUTCOME_TO_STATUS[event.outcome], event.gatewayTransactionId);
+}
+
+/**
+ * Урегулирование платежа в терминальный статус — общее ядро для webhook (BE-6.4)
+ * и polling-fallback (BE-6.5). Идемпотентно на уровне БД: гонка webhook↔polling за
+ * один и тот же gateway_transaction_id ловится UNIQUE (P2002) → 200 no-op.
+ * На SUCCESS отправляет квитанцию (best-effort через notify).
+ */
+async function settlePayment(
+  payment: PaymentRow,
+  target: PaymentStatus,
+  gatewayTransactionId: string,
+): Promise<WebhookResult> {
   try {
-    await setPaymentStatus(payment.id, target, event.gatewayTransactionId);
+    await setPaymentStatus(payment.id, target, gatewayTransactionId);
   } catch (err) {
     // UNIQUE gateway_transaction_id: та же транзакция шлюза уже записана → идемпотентный реплей
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
-      logger.info({ paymentId: payment.id }, 'webhook: gateway_transaction_id replay — idempotent');
+      logger.info({ paymentId: payment.id }, 'settle: gateway_transaction_id replay — idempotent');
       return { status: payment.status, idempotent: true };
     }
     throw err;
@@ -130,6 +144,40 @@ export async function handleWebhook(
 
   if (target === 'SUCCESS') await sendReceipt(payment);
   return { status: target, idempotent: false };
+}
+
+/**
+ * Polling-fallback (BE-6.5): опросить шлюз по зависшим PROCESSING-платежам, для
+ * которых webhook не пришёл за PAYMENT_POLL_STALE_MS. Каждый платёж обрабатывается
+ * независимо (сбой одного не роняет пачку). Терминальный ответ шлюза → тот же
+ * settlePayment, что и webhook (одинаковая идемпотентность). `unknown` → пропуск.
+ */
+export async function reconcileStalePaymentsJob(): Promise<void> {
+  const cutoff = new Date(Date.now() - env.PAYMENT_POLL_STALE_MS);
+  const stale = await findStaleProcessingPayments(cutoff, 50);
+  if (stale.length === 0) return;
+
+  let settled = 0;
+  for (const payment of stale) {
+    try {
+      const gatewayName = payment.gateway.toLowerCase() as 'click' | 'payme';
+      const result = await getGateway(gatewayName).queryStatus({
+        transactionId: payment.id,
+        gatewayTransactionId: payment.gatewayTransactionId,
+      });
+      // 'unknown' — шлюз не знает; 'prepare' — незавершённая фаза (адаптеры
+      // queryStatus её не возвращают, но исключаем для полноты типов)
+      if (result.outcome === 'unknown' || result.outcome === 'prepare') continue;
+      const target = OUTCOME_TO_STATUS[result.outcome];
+      // Внешний id: свежий из ответа шлюза, иначе уже известный (prepare-webhook)
+      const gatewayTxId = result.gatewayTransactionId ?? payment.gatewayTransactionId ?? payment.id;
+      const res = await settlePayment(payment, target, gatewayTxId);
+      if (!res.idempotent) settled += 1;
+    } catch (err) {
+      logger.warn({ err, paymentId: payment.id }, 'reconcile: payment poll failed');
+    }
+  }
+  logger.info({ scanned: stale.length, settled }, 'reconcile: stale payments polled');
 }
 
 /**

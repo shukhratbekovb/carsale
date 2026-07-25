@@ -41,11 +41,34 @@ export interface WebhookEvent {
   outcome: WebhookOutcome;
 }
 
+/** Результат опроса статуса (BE-6.5). `unknown` — шлюз не знает/недоступен
+ *  (в т.ч. dev sim-режим без реального шлюза) → реконсиляция платёж не трогает. */
+export type StatusOutcome = WebhookOutcome | 'unknown';
+
+export interface StatusQuery {
+  /** merchant_trans_id — наш Payment.id */
+  transactionId: string;
+  /** внешний id, если уже известен (был prepare-webhook) */
+  gatewayTransactionId?: string | null;
+}
+
+export interface StatusResult {
+  outcome: StatusOutcome;
+  /** внешний id транзакции, если шлюз его вернул (для фиксации идемпотентности) */
+  gatewayTransactionId?: string;
+}
+
 export interface PaymentGatewayPort {
   readonly name: Lowercase<PaymentGateway>;
   createInvoice(params: CreateInvoiceParams): Promise<CreatedInvoice>;
   /** Валидирует подпись и парсит тело webhook; невалидная подпись → 401 invalid_signature. */
   parseWebhook(body: unknown): WebhookEvent;
+  /**
+   * Опрос текущего статуса платежа у шлюза (polling-fallback BE-6.5): вызывается
+   * реконсиляцией, когда webhook не пришёл за N минут. В dev sim-режиме реального
+   * шлюза нет → `unknown` (реконсиляция ничего не меняет).
+   */
+  queryStatus(query: StatusQuery): Promise<StatusResult>;
 }
 
 const REQUEST_TIMEOUT_MS = 5_000;
@@ -169,6 +192,37 @@ export class ClickGateway implements PaymentGatewayPort {
       outcome,
     };
   }
+
+  /** Опрос статуса (BE-6.5): реальный Click — payment/status по merchant_trans_id;
+   *  dev sim (без креденшелов) — `unknown` (реального шлюза для опроса нет). */
+  async queryStatus(query: StatusQuery): Promise<StatusResult> {
+    if (!this.cfg.serviceId || !this.cfg.token || !this.cfg.merchantApiUrl) {
+      return { outcome: 'unknown' };
+    }
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    try {
+      const res = await fetch(
+        `${this.cfg.merchantApiUrl}/v2/merchant/payment/status?service_id=${this.cfg.serviceId}&merchant_trans_id=${query.transactionId}`,
+        { headers: { Authorization: this.cfg.token }, signal: controller.signal },
+      );
+      const data = (await res.json()) as { payment_status?: number; click_trans_id?: string | number };
+      if (!res.ok) throw new Error(`click payment/status failed: ${res.status}`);
+      // Click payment_status: 2 — оплачено; -1/-2/... — отменено/ошибка; иначе ещё в процессе
+      const gatewayTransactionId =
+        data.click_trans_id !== undefined ? String(data.click_trans_id) : undefined;
+      if (data.payment_status === 2) return { outcome: 'success', ...(gatewayTransactionId ? { gatewayTransactionId } : {}) };
+      if (typeof data.payment_status === 'number' && data.payment_status < 0) {
+        return { outcome: 'cancelled', ...(gatewayTransactionId ? { gatewayTransactionId } : {}) };
+      }
+      return { outcome: 'unknown' };
+    } catch (err) {
+      logger.warn({ err, transactionId: query.transactionId }, 'click: payment/status query failed');
+      return { outcome: 'unknown' };
+    } finally {
+      clearTimeout(timer);
+    }
+  }
 }
 
 // ─────────────────────────────── Payme ──────────────────────────────────────
@@ -235,6 +289,42 @@ export class PaymeGateway implements PaymentGatewayPort {
       amountUzs: Number(amount),
       outcome,
     };
+  }
+
+  /** Опрос статуса (BE-6.5): реальный Payme — JSON-RPC CheckTransaction; dev sim
+   *  (без merchant_id) — `unknown`. Реальный Payme опрашивают по payme_trans_id,
+   *  которого до первого webhook нет → без него тоже `unknown`. */
+  async queryStatus(query: StatusQuery): Promise<StatusResult> {
+    if (!this.cfg.merchantId || !query.gatewayTransactionId) {
+      return { outcome: 'unknown' };
+    }
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    try {
+      const res = await fetch('https://checkout.payme.uz/api', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Auth': this.cfg.secretKey },
+        body: JSON.stringify({
+          method: 'CheckTransaction',
+          params: { id: query.gatewayTransactionId },
+        }),
+        signal: controller.signal,
+      });
+      const data = (await res.json()) as { result?: { state?: number } };
+      if (!res.ok) throw new Error(`payme CheckTransaction failed: ${res.status}`);
+      const state = data.result?.state;
+      // Payme state: 2 — проведён; -1/-2 — отменён; 1 — создан (ещё в процессе)
+      if (state === 2) return { outcome: 'success', gatewayTransactionId: query.gatewayTransactionId };
+      if (state === -1 || state === -2) {
+        return { outcome: 'cancelled', gatewayTransactionId: query.gatewayTransactionId };
+      }
+      return { outcome: 'unknown' };
+    } catch (err) {
+      logger.warn({ err, transactionId: query.transactionId }, 'payme: CheckTransaction query failed');
+      return { outcome: 'unknown' };
+    } finally {
+      clearTimeout(timer);
+    }
   }
 }
 

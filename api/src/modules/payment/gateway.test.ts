@@ -136,4 +136,16 @@ describe('payment gateways (BE-6.1/6.2)', () => {
       expect(() => getGateway('payme').parseWebhook(f)).toThrow(AppError);
     });
   });
+
+  describe('queryStatus (BE-6.5, dev sim → unknown)', () => {
+    it('click без creds → unknown (реального шлюза для опроса нет)', async () => {
+      const res = await getGateway('click').queryStatus({ transactionId: 'pay-1' });
+      expect(res.outcome).toBe('unknown');
+    });
+
+    it('payme без merchant_id → unknown', async () => {
+      const res = await getGateway('payme').queryStatus({ transactionId: 'pay-1', gatewayTransactionId: 'pm-1' });
+      expect(res.outcome).toBe('unknown');
+    });
+  });
 });

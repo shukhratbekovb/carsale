@@ -7,6 +7,7 @@ import { initChatHub } from './modules/chat/ws-hub.js';
 import { startFraudConsumer } from './modules/listing/fraud-consumer.js';
 import { expireListingsJob, retryDealRatingJob } from './modules/listing/service.js';
 import { startDeliveryConsumer } from './modules/notification/delivery-consumer.js';
+import { reconcileStalePaymentsJob } from './modules/payment/service.js';
 
 const app = createApp();
 const server = createServer(app);
@@ -30,6 +31,8 @@ initChatHub(server)
     // Cron-задачи жизненного цикла объявления (BE-3.7)
     scheduleJob('expire-listings', env.LISTING_EXPIRE_INTERVAL_MS, expireListingsJob);
     scheduleJob('dealrating-retry', env.DEALRATING_RETRY_INTERVAL_MS, retryDealRatingJob);
+    // Polling-fallback платежей (BE-6.5): дожать зависшие PROCESSING, если webhook не пришёл
+    scheduleJob('payment-reconcile', env.PAYMENT_POLL_INTERVAL_MS, reconcileStalePaymentsJob);
   })
   .catch((err) => {
     logger.error({ err }, 'failed to initialize chat hub');

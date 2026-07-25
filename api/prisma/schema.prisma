@@ -290,6 +290,8 @@ model Payment {
 
   @@index([userId])
   @@index([listingId])
+  // под polling-fallback (BE-6.5): скан зависших PROCESSING по updatedAt
+  @@index([status, updatedAt])
   @@map("payments")
 }
 
