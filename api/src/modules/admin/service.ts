@@ -1,6 +1,7 @@
 import type { VerificationStatus } from '@prisma/client';
 import { AppError } from '../../lib/errors.js';
 import { invalidateCatalog } from '../catalog/cache.js';
+import { computeExpiry } from '../listing/service.js';
 import { assertTransition } from '../listing/status-machine.js';
 import { notify } from '../notification/service.js';
 import {
@@ -53,7 +54,13 @@ export async function approveListing(id: string): Promise<{ status: string }> {
   if (!target) throw new AppError(404, 'listing_not_found', 'Listing not found');
   assertTransition(target.status, 'PUBLISHED');
 
-  await decideListing(id, { status: 'PUBLISHED', publishedAt: new Date(), fraudFlag: false });
+  const publishedAt = new Date();
+  await decideListing(id, {
+    status: 'PUBLISHED',
+    publishedAt,
+    expiresAt: computeExpiry(publishedAt), // срок 30 дней (BE-3.7)
+    fraudFlag: false,
+  });
   await invalidateCatalog(); // объявление появилось в каталоге (BE-4.2)
   await notify(target.sellerId, 'LISTING_STATUS', {
     title: 'Объявление опубликовано',

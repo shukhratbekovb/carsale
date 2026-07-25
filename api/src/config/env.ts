@@ -24,6 +24,11 @@ const envSchema = z.object({
 
   ML_SERVICE_URL: z.string().url().optional(),
 
+  // Интервалы cron-задач жизненного цикла (BE-3.7). Дефолты: EXPIRED — каждый час,
+  // retry Deal Rating — каждые 5 мин.
+  LISTING_EXPIRE_INTERVAL_MS: z.coerce.number().int().positive().default(60 * 60 * 1000),
+  DEALRATING_RETRY_INTERVAL_MS: z.coerce.number().int().positive().default(5 * 60 * 1000),
+
   // Базовый URL фронта — для return_url и sim-URL платёжного флоу (BE-6)
   WEB_BASE_URL: z.string().url().default('http://localhost:3100'),
 

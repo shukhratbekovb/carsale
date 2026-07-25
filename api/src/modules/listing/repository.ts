@@ -283,6 +283,7 @@ export async function findOtherPhotoHashes(
 export interface FraudDecisionData {
   status: ListingStatus;
   publishedAt?: Date;
+  expiresAt?: Date;
   fraudFlag: boolean;
   fraudReason: string | null;
   imageHash: string | null;
@@ -298,6 +299,7 @@ export async function saveFraudDecision(listingId: string, d: FraudDecisionData)
       fraudFlag: d.fraudFlag,
       fraudReason: d.fraudReason,
       ...(d.publishedAt !== undefined ? { publishedAt: d.publishedAt } : {}),
+      ...(d.expiresAt !== undefined ? { expiresAt: d.expiresAt } : {}),
       mlResult: {
         upsert: {
           create: {
@@ -316,4 +318,58 @@ export async function saveFraudDecision(listingId: string, d: FraudDecisionData)
       },
     },
   });
+}
+
+// --- Жизненный цикл: EXPIRED + retry Deal Rating (BE-3.7) ---
+
+/** PUBLISHED с истёкшим expiresAt → EXPIRED (07 §2.1). Возвращает истёкшие. */
+export async function expirePublished(now: Date): Promise<{ id: string; sellerId: string }[]> {
+  const prisma = getPrisma();
+  const expired = await prisma.listing.findMany({
+    where: { status: 'PUBLISHED', expiresAt: { not: null, lt: now } },
+    select: { id: true, sellerId: true },
+  });
+  if (expired.length > 0) {
+    await prisma.listing.updateMany({
+      where: { id: { in: expired.map((e) => e.id) } },
+      data: { status: 'EXPIRED' },
+    });
+  }
+  return expired;
+}
+
+/** Объявления с невычисленной оценкой (UNAVAILABLE/null) для retry (BE-3.7). */
+export async function findUnavailableForRetry(limit = 50): Promise<string[]> {
+  const rows = await getPrisma().listing.findMany({
+    where: {
+      status: { in: ['PUBLISHED', 'PENDING_MODERATION', 'DRAFT'] },
+      OR: [{ dealRatingLabel: null }, { dealRatingLabel: 'UNAVAILABLE' }],
+      vehicle: { isNot: null },
+    },
+    select: { id: true },
+    take: limit,
+  });
+  return rows.map((r) => r.id);
+}
+
+/** Источник признаков для системного пересчёта оценки (без проверки владельца). */
+export async function findEstimateSourceById(id: string): Promise<EstimateSource | null> {
+  const row = await getPrisma().listing.findUnique({
+    where: { id },
+    select: {
+      city: true,
+      priceUzs: true,
+      vehicle: { select: { make: true, model: true, year: true, mileage: true, condition: true } },
+    },
+  });
+  if (!row?.vehicle) return null;
+  return {
+    make: row.vehicle.make,
+    model: row.vehicle.model,
+    year: row.vehicle.year,
+    mileage: row.vehicle.mileage,
+    condition: row.vehicle.condition,
+    city: row.city,
+    priceUzs: row.priceUzs.toNumber(),
+  };
 }

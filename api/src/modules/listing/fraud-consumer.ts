@@ -5,7 +5,7 @@ import { consumeQueue } from '../../lib/queue.js';
 import { invalidateCatalog } from '../catalog/cache.js';
 import { notify } from '../notification/service.js';
 import { findFraudSource, findOtherPhotoHashes, saveFraudDecision } from './repository.js';
-import { FRAUD_CHECK_QUEUE } from './service.js';
+import { computeExpiry, FRAUD_CHECK_QUEUE } from './service.js';
 
 /**
  * Consumer очереди `fraud_check` (BE-3.6, §6.2). Разбирает события, эмитируемые
@@ -65,9 +65,11 @@ export async function handleFraudCheck(payload: unknown): Promise<void> {
   const flagged = reasons.length > 0;
   const fraudReason = flagged ? reasons.join('; ') : null;
 
+  const publishedAt = new Date();
   await saveFraudDecision(listingId, {
     status: flagged ? 'PENDING_MODERATION' : 'PUBLISHED',
-    ...(flagged ? {} : { publishedAt: new Date() }),
+    // публикация задаёт срок жизни 30 дней (07 §2.1, BE-3.7)
+    ...(flagged ? {} : { publishedAt, expiresAt: computeExpiry(publishedAt) }),
     fraudFlag: flagged,
     fraudReason,
     imageHash: src.phashes[0] ?? null,

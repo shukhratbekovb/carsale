@@ -2,8 +2,10 @@ import { createServer } from 'node:http';
 import { createApp } from './app.js';
 import { env } from './config/env.js';
 import { logger } from './lib/logger.js';
+import { scheduleJob } from './lib/scheduler.js';
 import { initChatHub } from './modules/chat/ws-hub.js';
 import { startFraudConsumer } from './modules/listing/fraud-consumer.js';
+import { expireListingsJob, retryDealRatingJob } from './modules/listing/service.js';
 import { startDeliveryConsumer } from './modules/notification/delivery-consumer.js';
 
 const app = createApp();
@@ -25,6 +27,9 @@ initChatHub(server)
     startDeliveryConsumer().catch((err) => {
       logger.warn({ err }, 'delivery-consumer: failed to subscribe (queue unavailable?)');
     });
+    // Cron-задачи жизненного цикла объявления (BE-3.7)
+    scheduleJob('expire-listings', env.LISTING_EXPIRE_INTERVAL_MS, expireListingsJob);
+    scheduleJob('dealrating-retry', env.DEALRATING_RETRY_INTERVAL_MS, retryDealRatingJob);
   })
   .catch((err) => {
     logger.error({ err }, 'failed to initialize chat hub');

@@ -5,12 +5,17 @@ import { logger } from '../../lib/logger.js';
 import { type BlurRegion, mlBlur, mlDealRating } from '../../lib/ml-client.js';
 import { publishEvent } from '../../lib/queue.js';
 import { putObject } from '../../lib/s3.js';
+import { invalidateCatalog } from '../catalog/cache.js';
 import { notify } from '../notification/service.js';
 import {
   createDraft as repoCreateDraft,
   createPhoto,
+  type EstimateSource,
+  expirePublished,
   findEstimateSource,
+  findEstimateSourceById,
   findOwnedState,
+  findUnavailableForRetry,
   listBySeller,
   listPhotos,
   type MyListingRow,
@@ -67,6 +72,12 @@ export async function createDraft(sellerId: string, input: DraftInput): Promise<
   return repoCreateDraft(sellerId, input);
 }
 
+/**
+ * Правка объявления (BE-3.1, +BE-3.8). DRAFT/REJECTED — редактируется на месте
+ * (REJECTED→DRAFT). **PUBLISHED → повторная модерация** (07 §2.1): любое изменение
+ * снимает с публикации в PENDING_MODERATION + re-emit fraud_check + инвалидация
+ * каталога + уведомление. При смене цены — пересчёт Deal Rating (в любом статусе).
+ */
 export async function updateDraft(
   id: string,
   sellerId: string,
@@ -74,14 +85,35 @@ export async function updateDraft(
 ): Promise<void> {
   const state = await findOwnedState(id, sellerId);
   if (!state) throw new AppError(404, 'listing_not_found', 'Listing not found');
-  if (!isEditable(state.status)) {
+  const priceChanged = input.priceUzs !== undefined;
+
+  if (isEditable(state.status)) {
+    // REJECTED → DRAFT при повторной правке (07 §2.1)
+    const nextStatus = state.status === 'REJECTED' ? 'DRAFT' : undefined;
+    await repoUpdateDraft(id, input, nextStatus);
+  } else if (state.status === 'PUBLISHED') {
+    // BE-3.8: изменение опубликованного → повторная модерация
+    assertTransition('PUBLISHED', 'PENDING_MODERATION');
+    await repoUpdateDraft(id, input, 'PENDING_MODERATION');
+    await invalidateCatalog(); // снято с публикации
+    try {
+      await publishEvent(FRAUD_CHECK_QUEUE, { action: 'fraud_check', listing_id: id });
+    } catch (err) {
+      logger.warn({ err, listingId: id }, 'updateDraft: failed to re-emit fraud_check');
+    }
+    await notify(sellerId, 'LISTING_STATUS', {
+      title: 'Объявление на повторной модерации',
+      message: 'Изменения отправлены на проверку — объявление временно снято с публикации.',
+      link: '/my-listings',
+    });
+  } else {
     throw new AppError(409, 'listing_not_editable', `Listing in status ${state.status} cannot be edited`, {
       status: state.status,
     });
   }
-  // REJECTED → DRAFT при повторной правке (07 §2.1)
-  const nextStatus = state.status === 'REJECTED' ? 'DRAFT' : undefined;
-  await repoUpdateDraft(id, input, nextStatus);
+
+  // BE-3.8: смена цены делает прежнюю оценку неактуальной — пересчитываем
+  if (priceChanged) await recomputeDealRating(id).catch(() => undefined);
 }
 
 export async function listMine(sellerId: string): Promise<MyListing[]> {
@@ -138,16 +170,8 @@ export interface PriceEstimate {
   recommendedMax?: number;
 }
 
-/**
- * Оценка цены (BE-3.4, §6.2): признаки объявления → ML `/v1/deal-rating`,
- * вердикт сохраняется на объявлении + ML_RESULT. Таймаут/сбой ML → UNAVAILABLE
- * (§2.4), не 5xx. Контракт ответа = web/lib/mock/price-estimate.ts (seller видит
- * диапазон, в отличие от публичного каталога).
- */
-export async function estimatePrice(id: string, sellerId: string): Promise<PriceEstimate> {
-  const src = await findEstimateSource(id, sellerId);
-  if (!src) throw new AppError(404, 'listing_not_found', 'Listing not found');
-
+/** Ядро оценки: признаки+цена → ML → сохранение вердикта. Сбой ML → UNAVAILABLE. */
+async function computeAndSaveDealRating(id: string, src: EstimateSource): Promise<PriceEstimate> {
   try {
     const ml = await mlDealRating({
       make: src.make,
@@ -171,7 +195,7 @@ export async function estimatePrice(id: string, sellerId: string): Promise<Price
     if (ml.recommended_max_uzs != null) result.recommendedMax = ml.recommended_max_uzs;
     return result;
   } catch (err) {
-    logger.warn({ err, listingId: id }, 'price-estimate: ML unavailable, degrading to UNAVAILABLE');
+    logger.warn({ err, listingId: id }, 'deal-rating: ML unavailable, degrading to UNAVAILABLE');
     await saveDealRating(id, {
       label: 'UNAVAILABLE',
       score: null,
@@ -181,6 +205,55 @@ export async function estimatePrice(id: string, sellerId: string): Promise<Price
     }).catch(() => undefined);
     return { label: 'UNAVAILABLE' };
   }
+}
+
+/**
+ * Оценка цены продавцу (BE-3.4, §6.2): признаки объявления → ML `/v1/deal-rating`,
+ * вердикт сохраняется на объявлении + ML_RESULT. Контракт ответа =
+ * web/lib/mock/price-estimate.ts (seller видит диапазон, в отличие от каталога).
+ */
+export async function estimatePrice(id: string, sellerId: string): Promise<PriceEstimate> {
+  const src = await findEstimateSource(id, sellerId);
+  if (!src) throw new AppError(404, 'listing_not_found', 'Listing not found');
+  return computeAndSaveDealRating(id, src);
+}
+
+/** Системный пересчёт оценки без проверки владельца (BE-3.7 retry / BE-3.8 смена цены). */
+export async function recomputeDealRating(id: string): Promise<void> {
+  const src = await findEstimateSourceById(id);
+  if (!src) return;
+  await computeAndSaveDealRating(id, src);
+}
+
+// --- Жизненный цикл: срок публикации + фоновые задачи (BE-3.7) ---
+
+export const LISTING_TTL_DAYS = 30; // 07 §2.1: EXPIRED через 30 дней после публикации
+
+/** Момент истечения объявления от даты публикации. */
+export function computeExpiry(from: Date): Date {
+  return new Date(from.getTime() + LISTING_TTL_DAYS * 24 * 60 * 60 * 1000);
+}
+
+/** Cron-задача (BE-3.7): PUBLISHED с истёкшим сроком → EXPIRED + уведомление продавцу. */
+export async function expireListingsJob(): Promise<void> {
+  const expired = await expirePublished(new Date());
+  if (expired.length === 0) return;
+  await invalidateCatalog(); // объявления ушли из каталога
+  for (const { sellerId } of expired) {
+    await notify(sellerId, 'LISTING_STATUS', {
+      title: 'Срок объявления истёк',
+      message: 'Публикация длилась 30 дней. Продлите объявление, если авто ещё продаётся.',
+      link: '/my-listings',
+    });
+  }
+  logger.info({ count: expired.length }, 'expire-job: listings expired');
+}
+
+/** Cron-задача (BE-3.7): пересчёт оценки для объявлений с UNAVAILABLE (ML был недоступен). */
+export async function retryDealRatingJob(): Promise<void> {
+  const ids = await findUnavailableForRetry();
+  for (const id of ids) await recomputeDealRating(id).catch(() => undefined);
+  if (ids.length > 0) logger.info({ count: ids.length }, 'dealrating-retry-job: recomputed');
 }
 
 // --- Фото (BE-3.3, §6.2) ---

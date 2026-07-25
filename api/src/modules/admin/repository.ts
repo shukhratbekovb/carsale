@@ -63,6 +63,7 @@ export async function findModerationTarget(id: string): Promise<ModerationTarget
 export interface DecideListingData {
   status: ListingStatus;
   publishedAt?: Date;
+  expiresAt?: Date;
   fraudFlag?: boolean;
   fraudReason?: string | null;
 }
@@ -73,6 +74,7 @@ export async function decideListing(id: string, data: DecideListingData): Promis
     data: {
       status: data.status,
       ...(data.publishedAt !== undefined ? { publishedAt: data.publishedAt } : {}),
+      ...(data.expiresAt !== undefined ? { expiresAt: data.expiresAt } : {}),
       ...(data.fraudFlag !== undefined ? { fraudFlag: data.fraudFlag } : {}),
       ...(data.fraudReason !== undefined ? { fraudReason: data.fraudReason } : {}),
     },
