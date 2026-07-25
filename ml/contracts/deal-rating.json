@@ -1,0 +1,27 @@
+{
+  "endpoint": "POST /v1/deal-rating",
+  "description": "Deal Rating (BE-2.3, 10-integrations-api §2.4). Core API decoder: api/src/lib/ml-client.ts mlDealRating (pass-through, snake_case). Values here are canonical examples — the contract is the set of KEYS and TYPES, not the exact numbers (label/score/prices depend on the trained model).",
+  "request": {
+    "make": "Chevrolet",
+    "model": "Cobalt",
+    "year": 2020,
+    "mileage": 45000,
+    "condition": "GOOD",
+    "city": "Tashkent",
+    "price_uzs": 150000000
+  },
+  "response": {
+    "label": "FAIR_PRICE",
+    "score": 0.95,
+    "recommended_min_uzs": 140000000,
+    "recommended_max_uzs": 165000000,
+    "computed_at": "2026-07-25T09:00:00+00:00"
+  },
+  "response_unavailable": {
+    "label": "UNAVAILABLE",
+    "score": 0.0,
+    "recommended_min_uzs": null,
+    "recommended_max_uzs": null,
+    "computed_at": "2026-07-25T09:00:00+00:00"
+  }
+}

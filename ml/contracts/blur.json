@@ -1,0 +1,19 @@
+{
+  "endpoint": "POST /v1/blur",
+  "description": "Plate blur + pHash (BE-2.4/2.5, 10-integrations-api §2.4). Multipart request. Core API decoder: api/src/lib/ml-client.ts mlBlur (snake_case → camelCase; blurred_image_b64 → Buffer). Contract = response KEYS and TYPES. blurred_image_b64 below is a short placeholder base64 (decodes to bytes) — the live endpoint returns a full JPEG.",
+  "request": {
+    "multipart": {
+      "file": "<binary, image/* only, <=10MB>",
+      "regions": "optional JSON array of normalized [0..1] boxes: [{\"x\":0.25,\"y\":0.25,\"width\":0.5,\"height\":0.5}]"
+    }
+  },
+  "response": {
+    "plate_detected": true,
+    "regions": [
+      { "x": 0.25, "y": 0.25, "width": 0.5, "height": 0.5 }
+    ],
+    "phash": "c3e0c7c3878f0f1f",
+    "blurred_image_b64": "L9j/4AAQSkZJRgABAQ==",
+    "processing_time_ms": 123
+  }
+}

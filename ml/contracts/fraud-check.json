@@ -1,0 +1,18 @@
+{
+  "endpoint": "POST /v1/fraud-check",
+  "description": "Price-anomaly fraud check (BE-2.5, 10-integrations-api §2.4). Core API decoder: api/src/lib/ml-client.ts mlFraudCheck (snake_case → camelCase). Contract = KEYS and TYPES; the request below uses a deliberately low price to illustrate an anomaly, but the ML verdict depends on the trained model.",
+  "request": {
+    "make": "Chevrolet",
+    "model": "Cobalt",
+    "year": 2020,
+    "mileage": 45000,
+    "condition": "GOOD",
+    "city": "Tashkent",
+    "price_uzs": 3000000
+  },
+  "response": {
+    "price_anomaly": true,
+    "deviation_percent": 97.3,
+    "predicted_median_uzs": 150000000
+  }
+}
