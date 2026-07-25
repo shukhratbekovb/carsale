@@ -1,17 +1,11 @@
 import { Suspense } from 'react';
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 import { CatalogFilters } from '@/components/catalog/catalog-filters';
 import { SortSelect } from '@/components/catalog/sort-select';
 import { ViewToggle } from '@/components/catalog/view-toggle';
 import { ListingCard } from '@/components/domain/listing-card';
 import { ListingRow } from '@/components/domain/listing-row';
-import {
-  filterListings,
-  findSimilarListings,
-  parseCatalogSearchParams,
-  sortListings,
-} from '@/lib/catalog/filter-listings';
-import { mockListings } from '@/lib/mock/listings';
+import { type CatalogResult, fetchCatalog } from '@/lib/catalog/api';
 import type { Listing } from '@/types/listing';
 
 interface CatalogPageProps {
@@ -46,12 +40,19 @@ function ListingsCollection({ listings, view }: { listings: Listing[]; view: Vie
 }
 
 // SSR обязателен (не CSR-only) — гостевой SEO-маршрут, см. frontend-plan.md §5.
-export default function CatalogPage({ searchParams }: CatalogPageProps) {
-  const t = useTranslations('catalog');
-  const { filters, sort } = parseCatalogSearchParams(searchParams);
+// Данные из Core `GET /listings` (§5): фильтры/сортировка/пагинация/«похожие» —
+// на сервере, клиентский filter-listings в основной выдаче больше не участвует.
+export default async function CatalogPage({ searchParams }: CatalogPageProps) {
+  const t = await getTranslations('catalog');
   const view: View = firstValue(searchParams.view) === 'list' ? 'list' : 'grid';
-  const results = sortListings(filterListings(mockListings, filters), sort);
-  const similar = results.length === 0 ? findSimilarListings(mockListings, filters) : [];
+
+  let data: CatalogResult | null = null;
+  try {
+    data = await fetchCatalog(searchParams);
+  } catch {
+    // Core недоступен/ошибка — показываем нотис, а не пустую «ничего не найдено»
+    data = null;
+  }
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8">
@@ -61,30 +62,38 @@ export default function CatalogPage({ searchParams }: CatalogPageProps) {
         <CatalogFilters />
       </Suspense>
 
-      {/* flex-wrap: счётчик + сортировка + переключатель вида не помещаются
-          в один ряд на 360px (Linux-рендер шрифтов чуть шире локального —
-          ловилось вьюпорт-гейтом NFR-24 на CI) */}
-      <div className="mb-4 mt-6 flex flex-wrap items-center justify-between gap-y-2">
-        <p className="text-sm text-muted-foreground">{t('count', { count: results.length })}</p>
-        <div className="flex items-center gap-2">
-          <Suspense fallback={null}>
-            <SortSelect />
-          </Suspense>
-          <Suspense fallback={null}>
-            <ViewToggle />
-          </Suspense>
-        </div>
-      </div>
-
-      {results.length > 0 ? (
-        <ListingsCollection listings={results} view={view} />
+      {data === null ? (
+        <p className="mt-6 rounded-md border border-dashed p-4 text-sm text-destructive">
+          {t('loadError')}
+        </p>
       ) : (
-        <div>
-          <p className="mb-4 rounded-md border border-dashed p-4 text-sm text-muted-foreground">
-            {t('noResults')}
-          </p>
-          <ListingsCollection listings={similar} view={view} />
-        </div>
+        <>
+          {/* flex-wrap: счётчик + сортировка + переключатель вида не помещаются
+              в один ряд на 360px (Linux-рендер шрифтов чуть шире локального —
+              ловилось вьюпорт-гейтом NFR-24 на CI) */}
+          <div className="mb-4 mt-6 flex flex-wrap items-center justify-between gap-y-2">
+            <p className="text-sm text-muted-foreground">{t('count', { count: data.total })}</p>
+            <div className="flex items-center gap-2">
+              <Suspense fallback={null}>
+                <SortSelect />
+              </Suspense>
+              <Suspense fallback={null}>
+                <ViewToggle />
+              </Suspense>
+            </div>
+          </div>
+
+          {data.items.length > 0 ? (
+            <ListingsCollection listings={data.items} view={view} />
+          ) : (
+            <div>
+              <p className="mb-4 rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+                {t('noResults')}
+              </p>
+              <ListingsCollection listings={data.similar} view={view} />
+            </div>
+          )}
+        </>
       )}
     </main>
   );

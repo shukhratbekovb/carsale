@@ -239,6 +239,7 @@
     "title": "Eʼlonlar katalogi",
     "count": "{count, number} ta eʼlon",
     "noResults": "Soʻrovingiz boʻyicha hech narsa topilmadi. Oʻxshash eʼlonlarni koʻrsatyapmiz.",
+    "loadError": "Eʼlonlarni yuklab boʻlmadi. Keyinroq qayta urinib koʻring.",
     "sortLabel": "Saralash",
     "sortDate": "Avval yangilari",
     "sortPrice": "Avval arzonlari",
