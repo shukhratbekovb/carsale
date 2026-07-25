@@ -12,6 +12,7 @@ const svc = vi.hoisted(() => ({
   getUsers: vi.fn(),
   setUserStatus: vi.fn(),
   getAnalytics: vi.fn(),
+  getAuditLog: vi.fn(),
 }));
 vi.mock('./service.js', () => svc);
 
@@ -59,7 +60,8 @@ describe('admin router (BE-8, RBAC)', () => {
     svc.approveListing.mockResolvedValue({ status: 'PUBLISHED' });
     const res = await asAdmin(request(app).post(`/admin/moderation/${UUID}/approve`));
     expect(res.status).toBe(200);
-    expect(svc.approveListing).toHaveBeenCalledWith(UUID);
+    // BE-8.5: роутер прокидывает id действующего админа (sub из JWT) в сервис
+    expect(svc.approveListing).toHaveBeenCalledWith(UUID, 'admin-1');
   });
 
   it('POST /moderation/:id/reject без причины → 400', async () => {
@@ -72,7 +74,7 @@ describe('admin router (BE-8, RBAC)', () => {
     svc.rejectListing.mockResolvedValue({ status: 'REJECTED' });
     const res = await asAdmin(request(app).post(`/admin/moderation/${UUID}/reject`)).send({ reason: 'DUPLICATE' });
     expect(res.status).toBe(200);
-    expect(svc.rejectListing).toHaveBeenCalledWith(UUID, { reason: 'DUPLICATE' });
+    expect(svc.rejectListing).toHaveBeenCalledWith(UUID, { reason: 'DUPLICATE' }, 'admin-1');
   });
 
   it('POST /moderation/:id/approve не-uuid → 404', async () => {
@@ -84,7 +86,7 @@ describe('admin router (BE-8, RBAC)', () => {
     svc.setUserStatus.mockResolvedValue({ id: UUID, status: 'BANNED' });
     const res = await asAdmin(request(app).put(`/admin/users/${UUID}/status`)).send({ status: 'BANNED' });
     expect(res.status).toBe(200);
-    expect(svc.setUserStatus).toHaveBeenCalledWith(UUID, 'BANNED');
+    expect(svc.setUserStatus).toHaveBeenCalledWith(UUID, 'BANNED', 'admin-1');
   });
 
   it('PUT /users/:id/status невалидный статус → 400', async () => {
@@ -97,5 +99,18 @@ describe('admin router (BE-8, RBAC)', () => {
     const res = await asAdmin(request(app).get('/admin/analytics'));
     expect(res.status).toBe(200);
     expect(res.body.totalListings).toBe(5);
+  });
+
+  it('GET /admin/audit (ADMIN) → 200 { items }', async () => {
+    svc.getAuditLog.mockResolvedValue([{ id: 'a1', action: 'LISTING_APPROVE' }]);
+    const res = await asAdmin(request(app).get('/admin/audit'));
+    expect(res.status).toBe(200);
+    expect(res.body.items).toHaveLength(1);
+  });
+
+  it('GET /admin/audit не-ADMIN (BUYER) → 403', async () => {
+    const res = await request(app).get('/admin/audit').set('Authorization', `Bearer ${buyerToken}`);
+    expect(res.status).toBe(403);
+    expect(svc.getAuditLog).not.toHaveBeenCalled();
   });
 });

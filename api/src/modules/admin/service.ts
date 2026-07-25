@@ -14,11 +14,13 @@ import {
 import {
   analyticsCounts,
   decideListing,
+  findAuditLogs,
   findModerationItem,
   findModerationQueue,
   findModerationTarget,
   findUsers,
   findUserStatus,
+  insertAuditLog,
   sellerCounts,
   setUserVerification,
   type AnalyticsCounts,
@@ -49,7 +51,7 @@ const REJECT_REASON_LABEL: Record<RejectInput['reason'], string> = {
 };
 
 /** UC-15 «одобрить»: PENDING_MODERATION → PUBLISHED, снять fraud-флаг, уведомить продавца. */
-export async function approveListing(id: string): Promise<{ status: string }> {
+export async function approveListing(id: string, adminId: string): Promise<{ status: string }> {
   const target = await findModerationTarget(id);
   if (!target) throw new AppError(404, 'listing_not_found', 'Listing not found');
   assertTransition(target.status, 'PUBLISHED');
@@ -61,6 +63,14 @@ export async function approveListing(id: string): Promise<{ status: string }> {
     expiresAt: computeExpiry(publishedAt), // срок 30 дней (BE-3.7)
     fraudFlag: false,
   });
+  // Аудит после успешной мутации (BE-8.5): фиксируем факт решения модератора.
+  await insertAuditLog({
+    adminId,
+    action: 'LISTING_APPROVE',
+    targetType: 'LISTING',
+    targetId: id,
+    metadata: { from: target.status, to: 'PUBLISHED' },
+  });
   await invalidateCatalog(); // объявление появилось в каталоге (BE-4.2)
   await notify(target.sellerId, 'LISTING_STATUS', {
     title: 'Объявление опубликовано',
@@ -71,7 +81,11 @@ export async function approveListing(id: string): Promise<{ status: string }> {
 }
 
 /** UC-15 «отклонить»: PENDING_MODERATION → REJECTED с обязательной причиной, уведомить. */
-export async function rejectListing(id: string, input: RejectInput): Promise<{ status: string }> {
+export async function rejectListing(
+  id: string,
+  input: RejectInput,
+  adminId: string,
+): Promise<{ status: string }> {
   const target = await findModerationTarget(id);
   if (!target) throw new AppError(404, 'listing_not_found', 'Listing not found');
   assertTransition(target.status, 'REJECTED');
@@ -79,6 +93,13 @@ export async function rejectListing(id: string, input: RejectInput): Promise<{ s
   const reasonText = REJECT_REASON_LABEL[input.reason];
   const fraudReason = input.comment ? `${input.reason}: ${input.comment}` : input.reason;
   await decideListing(id, { status: 'REJECTED', fraudReason });
+  await insertAuditLog({
+    adminId,
+    action: 'LISTING_REJECT',
+    targetType: 'LISTING',
+    targetId: id,
+    metadata: { from: target.status, to: 'REJECTED', reason: input.reason, comment: input.comment ?? null },
+  });
   await notify(target.sellerId, 'LISTING_STATUS', {
     title: 'Объявление отклонено',
     message: `Причина: ${reasonText}.${input.comment ? ` ${input.comment}` : ''} Исправьте и отправьте снова.`,
@@ -101,13 +122,48 @@ const STATUS_TO_VERIFICATION: Record<AdminUserStatus, VerificationStatus> = {
 };
 
 /** UC-16: suspend/ban/restore одним вызовом (целевой статус явно). */
-export async function setUserStatus(id: string, status: AdminUserStatus): Promise<AdminUserRecord> {
+export async function setUserStatus(
+  id: string,
+  status: AdminUserStatus,
+  adminId: string,
+): Promise<AdminUserRecord> {
   const exists = await findUserStatus(id);
   if (!exists) throw new AppError(404, 'user_not_found', 'User not found');
   const row = await setUserVerification(id, STATUS_TO_VERIFICATION[status]);
+  await insertAuditLog({
+    adminId,
+    action: 'USER_STATUS_CHANGE',
+    targetType: 'USER',
+    targetId: id,
+    metadata: { status },
+  });
   return toAdminUserRecord(row);
 }
 
 export async function getAnalytics(): Promise<AnalyticsCounts> {
   return analyticsCounts(new Date());
+}
+
+export interface AuditLogRecord {
+  id: string;
+  adminId: string | null;
+  action: string;
+  targetType: string;
+  targetId: string;
+  metadata: unknown;
+  createdAt: string;
+}
+
+/** BE-8.5: журнал действий админа (сначала свежие). */
+export async function getAuditLog(limit = 100): Promise<AuditLogRecord[]> {
+  const rows = await findAuditLogs(limit);
+  return rows.map((r) => ({
+    id: r.id,
+    adminId: r.adminId,
+    action: r.action,
+    targetType: r.targetType,
+    targetId: r.targetId,
+    metadata: r.metadata ?? null,
+    createdAt: r.createdAt.toISOString(),
+  }));
 }

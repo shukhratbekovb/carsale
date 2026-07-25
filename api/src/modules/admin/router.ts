@@ -2,10 +2,11 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { asyncHandler } from '../../lib/async-handler.js';
 import { AppError } from '../../lib/errors.js';
-import { requireAuth, requireRole } from '../../middleware/auth.js';
+import { getAuth, requireAuth, requireRole } from '../../middleware/auth.js';
 import {
   approveListing,
   getAnalytics,
+  getAuditLog,
   getModerationItem,
   getModerationQueue,
   getUsers,
@@ -46,20 +47,22 @@ adminRouter.get(
   }),
 );
 
-// POST /admin/moderation/:id/approve — одобрить → PUBLISHED + уведомление
+// POST /admin/moderation/:id/approve — одобрить → PUBLISHED + уведомление + аудит
 adminRouter.post(
   '/moderation/:id/approve',
   asyncHandler(async (req, res) => {
-    res.json(await approveListing(id(req.params.id ?? '', 'listing_not_found')));
+    res.json(await approveListing(id(req.params.id ?? '', 'listing_not_found'), getAuth(res).sub));
   }),
 );
 
-// POST /admin/moderation/:id/reject — отклонить (обязательная причина) + уведомление
+// POST /admin/moderation/:id/reject — отклонить (обязательная причина) + уведомление + аудит
 adminRouter.post(
   '/moderation/:id/reject',
   asyncHandler(async (req, res) => {
     const input = rejectSchema.parse(req.body);
-    res.json(await rejectListing(id(req.params.id ?? '', 'listing_not_found'), input));
+    res.json(
+      await rejectListing(id(req.params.id ?? '', 'listing_not_found'), input, getAuth(res).sub),
+    );
   }),
 );
 
@@ -76,7 +79,7 @@ adminRouter.put(
   '/users/:id/status',
   asyncHandler(async (req, res) => {
     const { status } = userStatusSchema.parse(req.body);
-    res.json(await setUserStatus(id(req.params.id ?? '', 'user_not_found'), status));
+    res.json(await setUserStatus(id(req.params.id ?? '', 'user_not_found'), status, getAuth(res).sub));
   }),
 );
 
@@ -85,5 +88,13 @@ adminRouter.get(
   '/analytics',
   asyncHandler(async (_req, res) => {
     res.json(await getAnalytics());
+  }),
+);
+
+// GET /admin/audit — журнал действий администратора (BE-8.5, «сначала свежие»)
+adminRouter.get(
+  '/audit',
+  asyncHandler(async (_req, res) => {
+    res.json({ items: await getAuditLog() });
   }),
 );

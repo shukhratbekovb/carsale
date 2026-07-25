@@ -1,4 +1,5 @@
-import type { ListingStatus, Prisma, VerificationStatus } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import type { ListingStatus, VerificationStatus } from '@prisma/client';
 import { getPrisma } from '../../lib/prisma.js';
 import {
   adminUserSelect,
@@ -100,6 +101,59 @@ export async function setUserVerification(id: string, vs: VerificationStatus): P
     where: { id },
     data: { verificationStatus: vs },
     select: adminUserSelect,
+  });
+}
+
+// ── Audit log (BE-8.5, UC-15/16, NFR-16) ──────────────────────────────────────
+
+export type AdminAction = 'LISTING_APPROVE' | 'LISTING_REJECT' | 'USER_STATUS_CHANGE';
+
+export interface AuditLogEntry {
+  adminId: string;
+  action: AdminAction;
+  targetType: 'LISTING' | 'USER';
+  targetId: string;
+  metadata?: Prisma.InputJsonValue;
+}
+
+/** Записать действие админа в append-only журнал. Один и тот же Postgres, что и
+ *  сама мутация, — отдельной best-effort-логики не требует (см. service). */
+export async function insertAuditLog(entry: AuditLogEntry): Promise<void> {
+  await getPrisma().adminAuditLog.create({
+    data: {
+      adminId: entry.adminId,
+      action: entry.action,
+      targetType: entry.targetType,
+      targetId: entry.targetId,
+      metadata: entry.metadata ?? Prisma.JsonNull,
+    },
+  });
+}
+
+export interface AuditLogRow {
+  id: string;
+  adminId: string | null;
+  action: string;
+  targetType: string;
+  targetId: string;
+  metadata: Prisma.JsonValue;
+  createdAt: Date;
+}
+
+/** Журнал «сначала свежие», ограничение размера (пагинация не нужна на текущих объёмах). */
+export async function findAuditLogs(limit: number): Promise<AuditLogRow[]> {
+  return getPrisma().adminAuditLog.findMany({
+    orderBy: { createdAt: 'desc' },
+    take: limit,
+    select: {
+      id: true,
+      adminId: true,
+      action: true,
+      targetType: true,
+      targetId: true,
+      metadata: true,
+      createdAt: true,
+    },
   });
 }
 

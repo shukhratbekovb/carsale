@@ -126,6 +126,7 @@ model User {
   savedSearches     SavedSearch[]
   favorites         Favorite[]
   pushSubscriptions PushSubscription[]
+  adminAuditLogs    AdminAuditLog[]
 
   @@index([verificationStatus])
   @@index([email])
@@ -365,4 +366,29 @@ model VehicleHistory {
   listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
 
   @@map("vehicle_histories")
+}
+
+// Аудит-лог привилегированных действий администратора (BE-8.5, UC-15/16, NFR-16).
+// Append-only доказательная база: кто (adminId) / что (action) / над кем
+// (targetType+targetId) / с какими деталями (metadata) / когда (createdAt).
+// adminId — SetNull: удаление/анонимизация администратора (BE-9.3) не рушит журнал,
+// запись остаётся с null-автором (важнее сохранить факт действия, чем связь).
+model AdminAuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  adminId    String?  @map("admin_id") @db.Uuid
+  // LISTING_APPROVE | LISTING_REJECT | USER_STATUS_CHANGE
+  action     String   @db.VarChar(48)
+  // LISTING | USER
+  targetType String   @map("target_type") @db.VarChar(16)
+  targetId   String   @map("target_id") @db.Uuid
+  // причина отклонения, целевой статус пользователя и т.п. (null — без деталей)
+  metadata   Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  admin User? @relation(fields: [adminId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([adminId])
+  @@index([targetType, targetId])
+  @@map("admin_audit_logs")
 }
