@@ -322,6 +322,15 @@
     - **Не сделано (следующие срезы §5)**: пагинация UI (Core уже пагинирует, дефолт 20/стр — сейчас видна только 1-я страница; счётчик показывает total); опции `CatalogFilters` из реального фасетного эндпоинта (сейчас из `mockListings`); home/favorites/payment на реальных данных; удалить `mockListings`/`filter-listings` после их миграции
     - **Следующий шаг**: продолжить §5 — **`/my/listings`** (наполнить кабинет-плейсхолдер через `authorizedFetch` → `GET /my/listings`) и/или **favorites/home** на реальных данных; затем **wizard** (blur+price-estimate), **чат** (Socket.IO), платежи, уведомления, admin, GDPR. Бэкенд-хвост — **BE-10** (Ops/Security)
 
+46. **Backend-hardening — 2026-07-25 (фикс каталог-500 + BE-10.5 security-заголовки)**:
+    - Api-only волна (проверка curl'ом, без web dev): закрывает баг из п.45 + первый кусок BE-10
+    - **Фикс: vehicle-less PUBLISHED → 500 всего каталога** (найден в п.45). `toPublicListing` бросал на объявлении без `vehicle`, роняя весь `GET /listings`. Решение — **требовать связь `vehicle` во всех трёх запросах каталога** (`repository.ts`): `buildWhere` (когда нет поля-фильтра vehicle — сам field-filter уже подразумевает существование), `findByIdPublic` (vehicle-less карточка → 404), fallback `findSimilar`. В проде publish требует vehicle → это защита от битых/частичных данных, не нормальный поток; guard в мэппере оставлен
+    - **BE-10.5 security-заголовки** (NFR-12, OWASP; app-level часть — TLS/сертификаты это деплой). `middleware/security-headers.ts`: HSTS (браузер применяет только по HTTPS, по http безвреден), `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, `Cross-Origin-Resource-Policy: same-origin`, `X-Permitted-Cross-Domain-Policies: none`, строгий **CSP** `default-src 'none'; frame-ancestors 'none'` (API не рендерит HTML). Подключён в `app.ts` до всех роутов (покрывает и `/health`); `x-powered-by` уже был выключен
+    - Проверено: typecheck чист, **vitest 276/276** (+1 security-headers). **Живой смоук на реальном Postgres**: re-published vehicle-less строка → `GET /listings` **200** (был бы 500), строка **исключена** из выдачи, её карточка → **404**; все **7 security-заголовков** присутствуют на `/health` и `/listings`
+    - **Инфра-инцидент**: Docker Desktop снова отвалился в ходе смоука (pipe not found) — перезапущен (`Start-Process 'Docker Desktop.exe'` → `compose up -d` → дождался `pg_isready`), api рестартнут для чистого пула. Тот же класс нестабильности машины из прежних волн
+    - **Осталось по backend**: BE-10.1 (k6) / 10.2 (SAST+pentest) / 10.3 (бэкапы+restore-drill) / 10.4 (Prometheus/Grafana) / 10.5 **TLS-часть** (сертификаты/деплой) + BE-4.5 (1М строк, p95) + мелочи (facets-эндпоинт для фильтров, продление EXPIRED, leader-lock, боевой queryStatus, пагинация /admin/audit)
+    - **Следующий шаг**: продолжить §5-интеграцию фронта (**`/my/listings`** через `authorizedFetch`, **favorites/home**) — самый ценный путь к продукту; либо ещё BE-10 (10.4 метрики / 10.3 бэкапы — автономные, api/infra-only)
+
 ## В работе / следующий шаг
 
 Согласно frontend-plan.md §13 и §11:
