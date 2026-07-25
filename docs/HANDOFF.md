@@ -1,4 +1,4 @@
-# Handoff — состояние проекта на 2026-07-24 (обновлено: backend волна 17 — инфра-хвосты: consumer retry (queue-lib), rate-limit в app.ts, Redis-кэш каталога с версионной инвалидацией на живой инфре)
+# Handoff — состояние проекта на 2026-07-24 (обновлено: backend волна 18 — BE-3.7/3.8 жизненный цикл объявления: EXPIRED-scheduler + retry Deal Rating + повторная модерация при смене цены; эпик BE-3 закрыт)
 
 Снапшот для нового участника (человека или Claude Code сессии), продолжающего работу параллельно. Дополняет [CLAUDE.md](../CLAUDE.md) (правила workflow) и [frontend-plan.md](frontend-plan.md) (полный план, эпики FE-1–FE-10).
 
@@ -273,6 +273,16 @@
     - **Инфра-инцидент в ходе смоука**: Docker Desktop сам отвалился (pipe not found, все контейнеры ECONNREFUSED) — перезапущен (`Start-Process 'Docker Desktop.exe'` → `docker compose up -d`, дождался healthy). Тот самый класс нестабильности машины из прежних волн; попутно **невольно подтвердил fail-open кэша** (каталог пытался в БД при недоступном Redis, не падал на кэше)
     - **Известный минорный артефакт (не в скоупе)**: при нескольких быстрых reconnect подряд (флаппинг брокера на старте) consumer может забиндиться повторно (дубль в `list_consumers`) → возможная двойная доставка в редком окне флаппинга; на устоявшемся соединении — единичный бинд
     - **Следующий шаг**: **BE-3.7/3.8** (scheduler EXPIRED через 30 дней + пересчёт Deal Rating/повторная модерация при смене цены — последние listing-хвосты) / **BE-8.5** (аудит-лог действий админа) / **BE-2.7** (контракт-фикстуры Core↔ML) / начать **интеграцию фронта** (§5: снять auth-моки → реальная сессия разблокирует `/my-listings` и «текущего пользователя» в чате/избранном) / **BE-10** (Ops/Security: k6/SAST/бэкапы/метрики/TLS)
+
+41. **Backend волна 18 — 2026-07-24 (BE-3.7 + BE-3.8: жизненный цикл объявления — EXPIRED scheduler + повторная модерация при смене цены)**:
+    - Замыкает жизненный цикл объявления (07 §2.1) — последние listing-хвосты
+    - **`lib/scheduler.ts`** — простой периодический планировщик (interval-задачи, error-safe: сбой job не роняет процесс, `unref` не держит event loop). Single-process; для multi-instance нужен leader-lock (задокументировано)
+    - **BE-3.7 EXPIRED**: `expiresAt = publishedAt + 30 дней` проставляется **при публикации** (fraud-consumer clean→PUBLISHED, admin approve). **expire-job**: `PUBLISHED` с истёкшим `expiresAt` → `EXPIRED` + инвалидация каталога + уведомление продавцу. **dealrating-retry-job**: пересчёт оценки для объявлений с `UNAVAILABLE`/null (ML был недоступен при первичной оценке). Интервалы — `env LISTING_EXPIRE_INTERVAL_MS` (дефолт 1ч) / `DEALRATING_RETRY_INTERVAL_MS` (5 мин); регистрируются в `server.ts`
+    - **BE-3.8 повторная модерация**: `updateDraft` для `PUBLISHED` — любое изменение снимает с публикации в `PENDING_MODERATION` + re-emit `fraud_check` + инвалидация каталога + уведомление (07 §2.1). Смена цены (в любом статусе) → **пересчёт Deal Rating** (`recomputeDealRating` — системный, без проверки владельца; общее ядро `computeAndSaveDealRating` с `estimatePrice`)
+    - Проверено: typecheck чист, **vitest 260/260** (+13: scheduler 3, lifecycle 10). **Живой смоук ML+api+RabbitMQ+Postgres+Redis** (короткие интервалы job'ов): publish → PUBLISHED с `expires_at` +30 дней; **retry-job вычислил Deal Rating** для null-оценки (GREAT_DEAL); **PUT новой цены → повторная модерация** (трейл уведомлений `на модерации → опубликовано → на повторной модерации → опубликовано`, fraud-consumer decided дважды, цена и `expiresAt` обновлены); `expires_at` в прошлом → **expire-job → EXPIRED** + `catalog:ver` bump (4→5) + «Срок объявления истёк»
+    - **Не сделано**: продление истёкшего объявления продавцом (EXPIRED→PUBLISHED — отдельный UX-флоу, роут «продлить»); распределённый шедулинг (leader-lock) для multi-instance
+    - **Итог по listing-модулю**: весь эпик BE-3 закрыт (3.1–3.8). Жизненный цикл: DRAFT→PENDING_MODERATION→PUBLISHED (авто-фрод) ⇄ повторная модерация при правке → EXPIRED через 30 дней
+    - **Следующий шаг**: **BE-8.5** (аудит-лог действий админа — последний admin-хвост) / **BE-2.7** (контракт-фикстуры Core↔ML) / **BE-6.5** (polling-fallback платежей) / начать **интеграцию фронта** (§5: снять auth-моки → реальная JWT-сессия разблокирует `/my-listings`, «текущего пользователя» в чате/избранном) / **BE-10** (Ops/Security: k6/SAST/бэкапы/метрики/TLS)
 
 ## В работе / следующий шаг
 
