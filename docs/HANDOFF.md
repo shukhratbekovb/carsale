@@ -341,6 +341,15 @@
     - **Осталось по backend**: BE-10.1 (k6) / 10.2 (SAST+pentest) / 10.3 (бэкапы+restore-drill) / 10.4 **Grafana+алерты** / 10.5 **TLS-часть** + BE-4.5 (1М строк, p95) + мелочи (facets, продление EXPIRED, leader-lock, боевой queryStatus, пагинация /admin/audit)
     - **Следующий шаг**: §5-фронт (**`/my/listings`**/**favorites**/**home** на реальных данных) — ценнее для продукта; либо BE-10.3 бэкапы (api/infra-only)
 
+48. **BE-10.3 — 2026-07-25 (бэкапы БД + restore-drill)**:
+    - Продолжение BE-10, api/infra-only. NFR-11: hourly-бэкапы + квартальный дрилл восстановления («бэкап без успешного restore — не бэкап»)
+    - **`infra/backup/backup.sh`** — `pg_dump -Fc` (сжатый custom-format) в `dumps/` с ротацией по счётчику (`RETENTION`, дефолт 48 = двое суток hourly); **падает на пустом дампе** (зелёный-но-пустой хуже явного сбоя). По умолчанию через `docker exec` в compose-контейнер; `USE_DOCKER=0` → прямой `pg_dump` (прод)
+    - **`infra/backup/restore-drill.sh`** — восстанавливает дамп в **отдельную scratch-БД** (боевую не трогает), санити-чек таблиц/строк, затем дропает её (`trap cleanup`)
+    - **`README.md`** — использование, env, cron (hourly бэкап + квартальный дрилл), прод-заметки (UZ-хостинг+offsite по ADR-004/NFR-18, шифрование PII-дампов at-rest, алерт «нет свежего бэкапа» поверх метрик BE-10.4, путь к PITR). `dumps/` в `.gitignore`; добавлен `.gitattributes` (`*.sh` → LF, чтобы скрипты работали на Linux/CI)
+    - Проверено **вживую на запущенном Postgres**: `backup.sh` → дамп 49КБ; `restore-drill.sh` восстановил его в scratch-БД с `listings=18/users=25/tables=15` — **точно как в источнике** — PASS, scratch-БД удалена (без остатка)
+    - **Осталось по backend**: BE-10.1 (k6) / 10.2 (SAST+pentest) / 10.4 **Grafana+алерты** / 10.5 **TLS-часть** + BE-4.5 (1М строк, p95) + мелочи (facets, продление EXPIRED, leader-lock, боевой queryStatus, пагинация /admin/audit). Из BE-10 сделаны app/infra-части 10.3/10.4/10.5
+    - **Следующий шаг**: §5-фронт (**`/my/listings`**/favorites/home) — ценнее для продукта; либо BE-10.2 SAST (CI-конфиг, тоже без web dev)
+
 ## В работе / следующий шаг
 
 Согласно frontend-plan.md §13 и §11:
