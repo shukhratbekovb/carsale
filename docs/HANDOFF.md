@@ -350,6 +350,14 @@
     - **Осталось по backend**: BE-10.1 (k6) / 10.2 (SAST+pentest) / 10.4 **Grafana+алерты** / 10.5 **TLS-часть** + BE-4.5 (1М строк, p95) + мелочи (facets, продление EXPIRED, leader-lock, боевой queryStatus, пагинация /admin/audit). Из BE-10 сделаны app/infra-части 10.3/10.4/10.5
     - **Следующий шаг**: §5-фронт (**`/my/listings`**/favorites/home) — ценнее для продукта; либо BE-10.2 SAST (CI-конфиг, тоже без web dev)
 
+49. **BE-10.2 — 2026-07-25 (SAST в CI + подготовка OWASP-pentest)**:
+    - Продолжение BE-10, без web dev. NFR-16: статический анализ + подготовка к пентесту
+    - **`.github/workflows/security-sast.yml`** (2 уровня): (1) **CodeQL** `security-extended` по `javascript-typescript` (api+web) и `python` (ml), на push/PR + еженедельно (свежие advisory на неизменном коде); (2) **dependency-audit** только по **прод-зависимостям** (`--omit=dev` — dev-инструменты vitest/esbuild не деплоятся, их CVE не гейтят): **api — жёсткий гейт** (сейчас 0 прод-уязвимостей), **web — informational** (`continue-on-error`, т.к. его high — это известный `next@14`, ждёт миграции `next@16`)
+    - **`docs/security/pentest-prep.md`** — карта контролей Carsale → **OWASP Top 10 (2021)** (что реализовано и где тестировать: RBAC/IDOR, Argon2-хеш телефона, серверный прайс платежей, подпись+идемпотентность webhook, security-заголовки, rate-limit, OTP-lockout, PII-минимизация), поверхность атаки, тестовые аккаунты, **известные/принятые риски** (`next@14`, `/metrics` без auth, dev-секреты), **чеклист перед внешним pentest**, follow-up (`pip-audit` для ml, миграция next, DAST/ZAP)
+    - Проверено локально: workflow-YAML парсится (jobs `codeql[js-ts,python]` + `dependency-audit`); `npm audit --omit=dev --audit-level=high` в api → **exit 0** (прод-деки чисты; 5 уязвимостей api — все в dev-цепочке vitest/vite/esbuild). CodeQL исполняется только в GitHub Actions
+    - **Осталось по backend**: BE-10.1 (k6 нагрузка) / 10.4 **Grafana+алерты** / 10.5 **TLS-сертификаты** (деплой) + BE-4.5 (1М строк, p95) + мелочи (facets, продление EXPIRED, leader-lock, боевой queryStatus, пагинация /admin/audit, миграция next@16). **Автоматизируемые app/CI-части BE-10 закрыты** (10.2 SAST, 10.3 бэкапы, 10.4 метрики, 10.5 заголовки); оставшееся требует запущенных внешних систем (Prometheus/Grafana, боевой TLS) или крупных прогонов (k6/1М строк) — это ops/деплой-этап
+    - **Следующий шаг**: **§5-фронт** (`/my/listings`/favorites/home на реальных данных → wizard → чат → платежи → уведомления → admin → GDPR) — основной оставшийся путь к MVP; backend по коду практически готов
+
 ## В работе / следующий шаг
 
 Согласно frontend-plan.md §13 и §11:
