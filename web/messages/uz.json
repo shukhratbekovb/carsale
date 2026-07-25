@@ -16,7 +16,9 @@
     "loginRequiredTitle": "Eʼlonlaringizni koʻrish uchun tizimga kiring",
     "loginRequiredMessage": "Bu yerda siz joylashtirgan eʼlonlar koʻrinadi — moderatsiya holati, koʻrishlar va boshqaruv.",
     "login": "Kirish",
-    "createListing": "Eʼlon joylashtirish"
+    "createListing": "Eʼlon joylashtirish",
+    "emptyTitle": "Sizda hali eʼlonlar yoʻq",
+    "emptyMessage": "Bu yerda siz joylashtirgan eʼlonlar koʻrinadi. Birinchi eʼloningizni joylashtiring."
   },
   "notifications": {
     "bellLabel": "Bildirishnomalar",

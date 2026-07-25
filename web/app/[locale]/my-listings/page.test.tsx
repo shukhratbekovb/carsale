@@ -1,26 +1,51 @@
 import { render, screen } from '@/src/test/utils';
 import MyListingsPage from './page';
 
-// Нет реальной сессии/JWT (нет Core API — см. HANDOFF.md) — страница честно
-// показывает auth-гейт вместо подделки чужих объявлений под мок-данные.
-test('renders the login gate with a return link back to /my-listings', () => {
+// Страница теперь session-aware (§5): RequireAuth редиректит гостя на логин,
+// авторизованный видит кабинет-плейсхолдер. Мокаем сессию и локале-навигацию.
+const nav = vi.hoisted(() => ({ replace: vi.fn(), pathname: '/my-listings' }));
+const session = vi.hoisted(() => ({ status: 'authenticated' as 'authenticated' | 'anonymous' | 'loading' }));
+
+vi.mock('@/i18n/navigation', () => ({
+  useRouter: () => ({ replace: nav.replace, push: vi.fn() }),
+  usePathname: () => nav.pathname,
+  Link: ({ href, children, ...props }: React.ComponentProps<'a'>) => (
+    <a href={typeof href === 'string' ? href : undefined} {...props}>
+      {children}
+    </a>
+  ),
+}));
+
+vi.mock('@/lib/auth/session', () => ({
+  useSession: () => ({ status: session.status }),
+}));
+
+beforeEach(() => {
+  nav.replace.mockClear();
+  session.status = 'authenticated';
+});
+
+test('authenticated: renders the dashboard placeholder + create link', () => {
   render(<MyListingsPage />);
 
   expect(screen.getByRole('heading', { name: 'Мои объявления' })).toBeInTheDocument();
-  expect(screen.getByText('Войдите, чтобы увидеть свои объявления')).toBeInTheDocument();
-
-  // Тестовый провайдер даёт locale="ru" (не дефолтная) — i18n-Link добавляет префикс.
-  expect(screen.getByRole('link', { name: 'Войти' })).toHaveAttribute(
-    'href',
-    '/ru/auth/login?return=/my-listings'
-  );
+  expect(screen.getByText('У вас пока нет объявлений')).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'Разместить объявление' })).toHaveAttribute('href', '/sell/new');
+  expect(nav.replace).not.toHaveBeenCalled();
 });
 
-test('offers a shortcut to create a listing without logging in first', () => {
+test('anonymous: redirects to login with a return to the current path and hides content', () => {
+  session.status = 'anonymous';
   render(<MyListingsPage />);
 
-  expect(screen.getByRole('link', { name: 'Разместить объявление' })).toHaveAttribute(
-    'href',
-    '/ru/sell/new'
-  );
+  expect(nav.replace).toHaveBeenCalledWith('/auth/login?return=%2Fmy-listings');
+  expect(screen.queryByRole('heading', { name: 'Мои объявления' })).not.toBeInTheDocument();
+});
+
+test('loading: shows neither content nor a redirect yet', () => {
+  session.status = 'loading';
+  render(<MyListingsPage />);
+
+  expect(nav.replace).not.toHaveBeenCalled();
+  expect(screen.queryByRole('heading', { name: 'Мои объявления' })).not.toBeInTheDocument();
 });

@@ -1,14 +1,21 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { fetchMe, logout as logoutApi, refreshSession } from '@/lib/auth/auth-api';
+import {
+  getAccessToken as getStoredAccessToken,
+  registerSessionHooks,
+  setAccessToken,
+} from '@/lib/auth/token-store';
 import type { SessionUser } from '@/types/session';
 
 /**
- * Клиентская сессия (§5 интеграции). Access-токен живёт ТОЛЬКО в памяти (ref),
- * не в React-state и не в localStorage — не утекает в разметку/хранилище; при
- * перезагрузке восстанавливается из httpOnly refresh cookie (bootstrap ниже).
- * refresh_token браузер держит сам (same-origin cookie от BFF-прокси).
+ * Клиентская сессия (§5 интеграции). Access-токен живёт ТОЛЬКО в памяти
+ * (token-store), не в React-state и не в localStorage — не утекает в
+ * разметку/хранилище; при перезагрузке восстанавливается из httpOnly refresh
+ * cookie (bootstrap ниже). refresh_token браузер держит сам (same-origin cookie
+ * от BFF-прокси). Фоновый авто-refresh на 401 (authorizedFetch) обновляет тот же
+ * token-store; при потере сессии onAuthLost чистит UI-состояние здесь.
  */
 
 type SessionStatus = 'loading' | 'authenticated' | 'anonymous';
@@ -29,16 +36,15 @@ const SessionContext = createContext<SessionContextValue | null>(null);
 export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<SessionStatus>('loading');
   const [user, setUser] = useState<SessionUser | null>(null);
-  const accessTokenRef = useRef<string | null>(null);
 
   const login = useCallback((accessToken: string, nextUser: SessionUser) => {
-    accessTokenRef.current = accessToken;
+    setAccessToken(accessToken);
     setUser(nextUser);
     setStatus('authenticated');
   }, []);
 
   const clear = useCallback(() => {
-    accessTokenRef.current = null;
+    setAccessToken(null);
     setUser(null);
     setStatus('anonymous');
   }, []);
@@ -52,7 +58,14 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     clear();
   }, [clear]);
 
-  const getAccessToken = useCallback(() => accessTokenRef.current, []);
+  const getAccessToken = useCallback(() => getStoredAccessToken(), []);
+
+  // Реагируем на фоновые события token-store (авто-refresh на 401): потеря
+  // сессии → чистим UI. onRefreshed трогать состояние не нужно (user тот же).
+  useEffect(() => {
+    registerSessionHooks({ onAuthLost: () => clear() });
+    return () => registerSessionHooks({});
+  }, [clear]);
 
   // Восстановление сессии при загрузке: refresh по cookie → /me. Нет cookie /
   // истёк refresh → анонимный (нормальный путь для гостя, не ошибка).
@@ -63,7 +76,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         const { accessToken } = await refreshSession();
         const me = await fetchMe(accessToken);
         if (cancelled) return;
-        accessTokenRef.current = accessToken;
+        setAccessToken(accessToken);
         setUser(me);
         setStatus('authenticated');
       } catch {
