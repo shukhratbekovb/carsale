@@ -366,6 +366,13 @@
     - **Промежуточное состояние**: `mockListings` пока ещё питает home/favorites/payment и опции `CatalogFilters` — следующие срезы. Ссылка/редактирование объявления (draft→wizard) не подключены — строки не-PUBLISHED пока обзорные (без ссылки)
     - **Следующий шаг**: продолжить §5 — **favorites** (нужен favorites-API: список + toggle через `authorizedFetch`) и/или **home** (featured из реального каталога, SSR как каталог); затем **wizard** (blur+price-estimate через прокси), **чат** (Socket.IO), платежи, уведомления, admin, GDPR. Бэкенд — только ops/деплой-часть BE-10 (k6/Grafana/TLS) + мелочи
 
+51. **Favorites API — 2026-07-26 (FR-13, серверное избранное)**:
+    - Разблокирует фронтовую миграцию избранного: раньше избранное было **device-local (localStorage)**, серверного API не было (Favorite-модель есть с BE-0.3, но роутов нет). Api-only волна, curl-проверяемая
+    - **Новый модуль `api/src/modules/favorites/`** (mount `/favorites`, всё за `requireAuth`): `GET /favorites` — избранные объявления текущего юзера как **`PublicListing[]`** (переиспользует `toPublicListing`, как admin BE-8 → фронт рисует те же карточки; только PUBLISHED + vehicle, свежие сверху); `POST /favorites/:listingId` — идемпотентный upsert, **404** если объявления нет/не опубликовано; `DELETE /favorites/:listingId` — идемпотентное удаление
+    - Проверено: typecheck чист, **vitest 286/286** (+9: service 4, router 5). **Живой смоук (Core+Postgres)**: no-token→**401**; add Cobalt→`favorited:true`; повтор→**идемпотентно**; `GET`→2 объекта (Kia K5/OVERPRICED, Cobalt/GREAT_DEAL) в форме `PublicListing`; фейковый uuid→**404**; `DELETE`→`favorited:false`; `GET`→осталось 1
+    - **Не сделано (следующий фронт-срез)**: страница `/favorites` и `FavoriteButton` всё ещё device-local — переключить на этот API через `authorizedFetch` (авторизованный: сервер; гость: остаётся device или prompt-логин — решить при миграции); для «залитого сердца» на карточках каталога понадобится `GET /favorites/ids` или клиентский набор избранных id
+    - **Следующий шаг**: фронт-миграция favorites (страница + кнопка на новый API) и/или **home** (featured из реального каталога, SSR). Бэкенд — только ops/деплой BE-10
+
 ## В работе / следующий шаг
 
 Согласно frontend-plan.md §13 и §11:
