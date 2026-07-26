@@ -373,6 +373,16 @@
     - **Не сделано (следующий фронт-срез)**: страница `/favorites` и `FavoriteButton` всё ещё device-local — переключить на этот API через `authorizedFetch` (авторизованный: сервер; гость: остаётся device или prompt-логин — решить при миграции); для «залитого сердца» на карточках каталога понадобится `GET /favorites/ids` или клиентский набор избранных id
     - **Следующий шаг**: фронт-миграция favorites (страница + кнопка на новый API) и/или **home** (featured из реального каталога, SSR). Бэкенд — только ops/деплой BE-10
 
+52. **Интеграция фронта, шаг 5 — 2026-07-27 (§5: серверное избранное — страница + кнопка + провайдер)**:
+    - Завершает миграцию избранного из device-local (localStorage) на per-account Core API (п.51). Избранное теперь **фича аккаунта** (синхронизация между устройствами) → **гостя ведём на логин**
+    - **Бэкенд-добавка `GET /favorites/ids`** — лёгкий спутник `GET /favorites`: только id избранного, чтобы «залитое сердце» на карточках каталога грузилось одним маленьким вызовом, а не полными объявлениями. Auth-gated
+    - **`lib/favorites/favorites-api.ts`** — `fetchFavoriteIds`/`fetchFavorites`/`add`/`remove` через `authorizedFetch`. **`lib/favorites/favorites-context.tsx`** — `FavoritesProvider` грузит набор id **один раз** при авторизации (один `/favorites/ids` на все карточки, а не по вызову на каждое сердце), **оптимистичный тоггл + откат при сбое API**; безвредный гость-дефолт контекста → карточки рендерятся без провайдера (SSR/тесты). Обёрнут в layout под `SessionProvider`
+    - **`FavoriteButton`**: гость → `window.location`-редирект на локале-осведомлённый логин с `return` (без router-хуков — чтобы презентационные тесты карточек не требовали Next-router контекст); авторизован → оптимистичный тоггл. **Страница `/favorites`** — `RequireAuth` + клиентский `fetchFavorites` (та же сетка `ListingCard`), состояния loading/error(retry)/empty/list; гость редиректится на логин. i18n `favorites.loadError/retry` (uz+ru). Старый хук `useFavorites` (localStorage) удалён
+    - Проверено: web typecheck + lint чист, **vitest 376/376** (+ favorites-api 4, context 4 вкл. откат, button 5, page 4; тесты карточек/строк/a11y не тронуты — за счёт дефолта контекста и отказа от router-хуков). **Живой смоук `/favorites/ids`** (api-only): пусто→`{ids:[]}`, после add b1→`{ids:[b1]}`, no-token→401; CRUD избранного curl-проверен в п.51
+    - **Дизайн-решение**: избранное — **auth-only** (гость не может добавить без входа; редирект на логин). Соответствует per-user бэкенду; убирает проблему guest↔account-merge. Demo-триггер price-drop (mock-уведомление) оставлен на add — до миграции уведомлений
+    - **Промежуточное состояние**: `mockListings` ещё питает **home** и опции `CatalogFilters` — следующие срезы. `payment`-страница тоже на `mockListings`
+    - **Следующий шаг**: §5 — **home** (featured из реального каталога, SSR как каталог — быстрый безопасный срез) и/или **CatalogFilters facets** (нужен backend facets-эндпоинт) → **wizard** (blur+price-estimate), **чат** (Socket.IO), платежи, уведомления, admin, GDPR. Бэкенд — только ops/деплой BE-10
+
 ## В работе / следующий шаг
 
 Согласно frontend-plan.md §13 и §11:
