@@ -18,7 +18,18 @@
     "login": "Kirish",
     "createListing": "Eʼlon joylashtirish",
     "emptyTitle": "Sizda hali eʼlonlar yoʻq",
-    "emptyMessage": "Bu yerda siz joylashtirgan eʼlonlar koʻrinadi. Birinchi eʼloningizni joylashtiring."
+    "emptyMessage": "Bu yerda siz joylashtirgan eʼlonlar koʻrinadi. Birinchi eʼloningizni joylashtiring.",
+    "loadError": "Eʼlonlarni yuklab boʻlmadi.",
+    "retry": "Qayta urinish",
+    "status": {
+      "DRAFT": "Qoralama",
+      "PENDING_MODERATION": "Moderatsiyada",
+      "PUBLISHED": "Eʼlon qilingan",
+      "REJECTED": "Rad etilgan",
+      "ARCHIVED": "Arxivlangan",
+      "SOLD": "Sotilgan",
+      "EXPIRED": "Muddati tugagan"
+    }
   },
   "notifications": {
     "bellLabel": "Bildirishnomalar",
