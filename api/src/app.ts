@@ -12,6 +12,7 @@ import { adminRouter } from './modules/admin/router.js';
 import { authRouter } from './modules/auth/router.js';
 import { catalogRouter } from './modules/catalog/router.js';
 import { chatRouter } from './modules/chat/router.js';
+import { favoritesRouter } from './modules/favorites/router.js';
 import { listingRouter, myListingsRouter } from './modules/listing/router.js';
 import { notificationRouter } from './modules/notification/router.js';
 import { paymentsRouter, webhooksRouter } from './modules/payment/router.js';
@@ -55,6 +56,7 @@ export function createApp(): express.Express {
   app.use('/listings', listingRouter);
   app.use('/my', myListingsRouter);
   app.use('/chat', chatRouter);
+  app.use('/favorites', favoritesRouter);
   app.use('/payments', paymentsRouter);
   app.use('/webhooks', webhooksRouter);
   app.use('/notifications', notificationRouter);
