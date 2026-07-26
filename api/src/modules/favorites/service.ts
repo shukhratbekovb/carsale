@@ -3,6 +3,7 @@ import { toPublicListing, type PublicListing } from '../catalog/mapper.js';
 import {
   addFavorite as repoAdd,
   findPublishedListing,
+  listFavoriteIds,
   listFavoriteListings,
   removeFavorite as repoRemove,
 } from './repository.js';
@@ -15,6 +16,11 @@ import {
 export async function getFavorites(userId: string): Promise<{ items: PublicListing[] }> {
   const rows = await listFavoriteListings(userId);
   return { items: rows.map(toPublicListing) };
+}
+
+/** Лёгкий список id — для состояния «сердечка» на карточках каталога. */
+export async function getFavoriteIds(userId: string): Promise<{ ids: string[] }> {
+  return { ids: await listFavoriteIds(userId) };
 }
 
 export interface FavoriteResult {

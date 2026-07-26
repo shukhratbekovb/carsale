@@ -17,6 +17,16 @@ export async function listFavoriteListings(userId: string): Promise<PublicListin
   return rows.map((r) => r.listing);
 }
 
+/** Только id избранных объявлений (лёгкий вызов для состояния «сердечка» на карточках). */
+export async function listFavoriteIds(userId: string): Promise<string[]> {
+  const rows = await getPrisma().favorite.findMany({
+    where: { userId },
+    select: { listingId: true },
+    orderBy: { createdAt: 'desc' },
+  });
+  return rows.map((r) => r.listingId);
+}
+
 /** Идемпотентное добавление (повторное — no-op, без P2002). */
 export async function addFavorite(userId: string, listingId: string): Promise<void> {
   await getPrisma().favorite.upsert({

@@ -6,6 +6,7 @@ vi.mock('../../config/env.js', () => ({ env: { NODE_ENV: 'test', JWT_SECRET: 'te
 
 const svc = vi.hoisted(() => ({
   getFavorites: vi.fn(),
+  getFavoriteIds: vi.fn(),
   addFavorite: vi.fn(),
   removeFavorite: vi.fn(),
 }));
@@ -44,6 +45,14 @@ describe('favorites router (FR-13)', () => {
     expect(res.status).toBe(200);
     expect(res.body.items).toHaveLength(1);
     expect(svc.getFavorites).toHaveBeenCalledWith('u1');
+  });
+
+  it('GET /favorites/ids → 200 { ids }', async () => {
+    svc.getFavoriteIds.mockResolvedValue({ ids: ['a', 'b'] });
+    const res = await auth(request(app).get('/favorites/ids'));
+    expect(res.status).toBe(200);
+    expect(res.body.ids).toEqual(['a', 'b']);
+    expect(svc.getFavoriteIds).toHaveBeenCalledWith('u1');
   });
 
   it('POST /favorites/:id (uuid) → addFavorite(userId, id)', async () => {

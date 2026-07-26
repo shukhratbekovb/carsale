@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { asyncHandler } from '../../lib/async-handler.js';
 import { AppError } from '../../lib/errors.js';
 import { getAuth, requireAuth } from '../../middleware/auth.js';
-import { addFavorite, getFavorites, removeFavorite } from './service.js';
+import { addFavorite, getFavoriteIds, getFavorites, removeFavorite } from './service.js';
 
 /**
  * Favorites Module (FR-13). Все роуты — только текущий пользователь (requireAuth).
@@ -25,6 +25,14 @@ favoritesRouter.get(
   '/',
   asyncHandler(async (_req, res) => {
     res.json(await getFavorites(getAuth(res).sub));
+  }),
+);
+
+// GET /favorites/ids — только id (лёгкий вызов для «сердечек» на карточках)
+favoritesRouter.get(
+  '/ids',
+  asyncHandler(async (_req, res) => {
+    res.json(await getFavoriteIds(getAuth(res).sub));
   }),
 );
 

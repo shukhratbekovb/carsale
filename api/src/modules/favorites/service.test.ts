@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const repo = vi.hoisted(() => ({
   listFavoriteListings: vi.fn(),
+  listFavoriteIds: vi.fn(),
   addFavorite: vi.fn(),
   removeFavorite: vi.fn(),
   findPublishedListing: vi.fn(),
@@ -13,7 +14,7 @@ vi.mock('../catalog/mapper.js', () => ({
   toPublicListing: (row: { id: string }) => ({ id: row.id, mapped: true }),
 }));
 
-import { addFavorite, getFavorites, removeFavorite } from './service.js';
+import { addFavorite, getFavoriteIds, getFavorites, removeFavorite } from './service.js';
 
 describe('favorites service (FR-13)', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -23,6 +24,12 @@ describe('favorites service (FR-13)', () => {
     const res = await getFavorites('u1');
     expect(repo.listFavoriteListings).toHaveBeenCalledWith('u1');
     expect(res).toEqual({ items: [{ id: 'l1', mapped: true }, { id: 'l2', mapped: true }] });
+  });
+
+  it('getFavoriteIds: отдаёт { ids }', async () => {
+    repo.listFavoriteIds.mockResolvedValue(['l1', 'l2']);
+    expect(await getFavoriteIds('u1')).toEqual({ ids: ['l1', 'l2'] });
+    expect(repo.listFavoriteIds).toHaveBeenCalledWith('u1');
   });
 
   it('addFavorite: PUBLISHED существует → upsert + favorited:true', async () => {
