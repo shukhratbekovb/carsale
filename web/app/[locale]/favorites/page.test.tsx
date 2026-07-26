@@ -1,52 +1,63 @@
-import { render, screen } from '@/src/test/utils';
-import FavoritesPage from './page';
+import { render, screen, waitFor } from '@/src/test/utils';
 import { mockListings } from '@/lib/mock/listings';
+import FavoritesPage from './page';
 
-const FAVORITES_STORAGE_KEY = 'carsale:favorites';
+// Избранное серверное и auth-walled (§5): мокаем сессию (RequireAuth), локале-
+// навигацию и клиент избранного.
+const nav = vi.hoisted(() => ({ replace: vi.fn(), pathname: '/favorites' }));
+const session = vi.hoisted(() => ({ status: 'authenticated' as 'authenticated' | 'anonymous' | 'loading' }));
+const api = vi.hoisted(() => ({ fetchFavorites: vi.fn() }));
 
-// id '1' (Chevrolet Cobalt) and id '6' (Toyota Camry) — plain, description-bearing
-// fixtures with distinct make/model, good for asserting two cards render side by side.
-const listingA = mockListings.find((listing) => listing.id === '1')!;
-const listingB = mockListings.find((listing) => listing.id === '6')!;
+vi.mock('@/i18n/navigation', () => ({
+  useRouter: () => ({ replace: nav.replace, push: vi.fn() }),
+  usePathname: () => nav.pathname,
+  Link: ({ href, children, ...props }: React.ComponentProps<'a'>) => (
+    <a href={typeof href === 'string' ? href : undefined} {...props}>
+      {children}
+    </a>
+  ),
+}));
+vi.mock('@/lib/auth/session', () => ({ useSession: () => ({ status: session.status }) }));
+vi.mock('@/lib/favorites/favorites-api', () => ({ fetchFavorites: api.fetchFavorites }));
+
+const listingA = mockListings.find((l) => l.id === '1')!;
+const listingB = mockListings.find((l) => l.id === '6')!;
 
 beforeEach(() => {
-  localStorage.clear();
+  nav.replace.mockClear();
+  session.status = 'authenticated';
+  api.fetchFavorites.mockReset();
 });
 
-afterEach(() => {
-  localStorage.clear();
+test('anonymous → redirects to login with a return to /favorites', () => {
+  session.status = 'anonymous';
+  api.fetchFavorites.mockResolvedValue([]);
+  render(<FavoritesPage />);
+  expect(nav.replace).toHaveBeenCalledWith('/auth/login?return=%2Ffavorites');
+  expect(screen.queryByRole('heading', { name: 'Избранное' })).not.toBeInTheDocument();
 });
 
-test('renders the empty state with a link to the catalog when there are no favorites', () => {
+test('authenticated: renders a card per favorite with a matching count', async () => {
+  api.fetchFavorites.mockResolvedValue([listingA, listingB]);
   render(<FavoritesPage />);
 
-  expect(screen.getByRole('heading', { name: 'Избранное' })).toBeInTheDocument();
-  expect(screen.getByText('0 объявлений')).toBeInTheDocument();
-  expect(screen.getByText('В избранном пока пусто')).toBeInTheDocument();
-  expect(
-    screen.getByText('Нажмите на сердечко на карточке объявления, чтобы сохранить его здесь.')
-  ).toBeInTheDocument();
-
-  // Тестовый провайдер даёт locale="ru" (не дефолтная) — i18n-Link добавляет префикс.
-  expect(screen.getByRole('link', { name: 'Смотреть каталог' })).toHaveAttribute('href', '/ru/catalog');
-});
-
-test('renders a ListingCard for each favorited listing with a matching count', () => {
-  localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify([listingA.id, listingB.id]));
-
-  render(<FavoritesPage />);
-
-  expect(screen.getByText(`${listingA.make} ${listingA.model}, ${listingA.year}`)).toBeInTheDocument();
+  expect(await screen.findByText(`${listingA.make} ${listingA.model}, ${listingA.year}`)).toBeInTheDocument();
   expect(screen.getByText(`${listingB.make} ${listingB.model}, ${listingB.year}`)).toBeInTheDocument();
   expect(screen.getByText('2 объявления')).toBeInTheDocument();
-  expect(screen.queryByText('В избранном пока пусто')).not.toBeInTheDocument();
 });
 
-test('ignores favorite ids that no longer match any mock listing', () => {
-  localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify([listingA.id, 'does-not-exist']));
-
+test('authenticated + empty → empty state with a catalog link', async () => {
+  api.fetchFavorites.mockResolvedValue([]);
   render(<FavoritesPage />);
 
-  expect(screen.getByText(`${listingA.make} ${listingA.model}, ${listingA.year}`)).toBeInTheDocument();
-  expect(screen.getByText('1 объявление')).toBeInTheDocument();
+  expect(await screen.findByText('В избранном пока пусто')).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'Смотреть каталог' })).toHaveAttribute('href', '/catalog');
+});
+
+test('authenticated + fetch error → loadError with retry', async () => {
+  api.fetchFavorites.mockRejectedValue(new Error('boom'));
+  render(<FavoritesPage />);
+
+  expect(await screen.findByText('Не удалось загрузить избранное.')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Повторить' })).toBeInTheDocument();
 });

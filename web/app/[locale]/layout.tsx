@@ -8,6 +8,7 @@ import { Header } from '@/components/layout/header';
 import { ToastHost } from '@/components/notifications/toast-host';
 import { routing } from '@/i18n/routing';
 import { SessionProvider } from '@/lib/auth/session';
+import { FavoritesProvider } from '@/lib/favorites/favorites-context';
 import '../globals.css';
 
 // latin-подмножество Inter включает U+02BB/U+02BC (oʻ, gʻ, eʼlon) — глифы
@@ -48,10 +49,12 @@ export default function LocaleLayout({ children, params }: LocaleLayoutProps) {
       <body className={`${inter.variable} flex min-h-screen flex-col font-sans antialiased`}>
         <NextIntlClientProvider>
           <SessionProvider>
-            <Header />
-            <div className="flex-1">{children}</div>
-            <Footer />
-            <ToastHost />
+            <FavoritesProvider>
+              <Header />
+              <div className="flex-1">{children}</div>
+              <Footer />
+              <ToastHost />
+            </FavoritesProvider>
           </SessionProvider>
         </NextIntlClientProvider>
       </body>

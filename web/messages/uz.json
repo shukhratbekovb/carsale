@@ -9,7 +9,9 @@
     "count": "{count, number} ta eʼlon",
     "emptyTitle": "Saralanganlar hozircha boʻsh",
     "emptyMessage": "Eʼlon kartochkasidagi yurak belgisini bosing — u shu yerda saqlanadi.",
-    "browseCatalog": "Katalogni koʻrish"
+    "browseCatalog": "Katalogni koʻrish",
+    "loadError": "Saralanganlarni yuklab boʻlmadi.",
+    "retry": "Qayta urinish"
   },
   "myListings": {
     "pageTitle": "Mening eʼlonlarim",

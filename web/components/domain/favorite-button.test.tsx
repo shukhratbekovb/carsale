@@ -1,47 +1,77 @@
 import userEvent from '@testing-library/user-event';
 import { fireEvent, render, screen } from '@/src/test/utils';
 import { FavoriteButton } from './favorite-button';
-import { mockListings } from '@/lib/mock/listings';
 
-const listingId = mockListings[0].id;
+// FavoriteButton теперь читает серверное избранное из FavoritesProvider (§5) —
+// мокаем контекст, чтобы задавать состояние; редирект гостя идёт через
+// window.location.assign (не router-хуки).
+const fav = vi.hoisted(() => ({
+  isAuthenticated: false,
+  isFavorite: vi.fn(() => false),
+  toggleFavorite: vi.fn(),
+}));
+vi.mock('@/lib/favorites/favorites-context', () => ({
+  useFavorites: () => ({
+    isAuthenticated: fav.isAuthenticated,
+    isFavorite: fav.isFavorite,
+    toggleFavorite: fav.toggleFavorite,
+  }),
+}));
 
-// FavoriteButton persists via useFavorites -> useLocalStorage (real window.localStorage).
+const LISTING = '11111111-1111-1111-1111-111111111111';
+
+// jsdom window.location не spy-абелен — подменяем минимальным стабом с полями,
+// которые читает кнопка (pathname/search/assign).
+let assignMock: ReturnType<typeof vi.fn>;
+const realLocation = window.location;
+
 beforeEach(() => {
-  localStorage.clear();
+  fav.isAuthenticated = false;
+  fav.isFavorite.mockReturnValue(false);
+  fav.toggleFavorite.mockClear();
+  assignMock = vi.fn();
+  Object.defineProperty(window, 'location', {
+    configurable: true,
+    value: { pathname: '/ru/catalog/1', search: '', assign: assignMock },
+  });
 });
 
 afterEach(() => {
-  localStorage.clear();
+  Object.defineProperty(window, 'location', { configurable: true, value: realLocation });
 });
 
-test('renders unpressed with the "add" label when the listing is not favorited', () => {
-  render(<FavoriteButton listingId={listingId} />);
-
-  const button = screen.getByRole('button', { name: 'Добавить в избранное' });
-  expect(button).toHaveAttribute('aria-pressed', 'false');
+test('renders unpressed with the "add" label when not favorited', () => {
+  render(<FavoriteButton listingId={LISTING} />);
+  expect(screen.getByRole('button', { name: 'Добавить в избранное' })).toHaveAttribute('aria-pressed', 'false');
 });
 
-test('toggles aria-pressed and the label on click, back and forth', async () => {
-  const user = userEvent.setup();
-  render(<FavoriteButton listingId={listingId} />);
+test('authenticated + favorited → pressed "remove" label', () => {
+  fav.isAuthenticated = true;
+  fav.isFavorite.mockReturnValue(true);
+  render(<FavoriteButton listingId={LISTING} />);
+  expect(screen.getByRole('button', { name: 'Убрать из избранного' })).toHaveAttribute('aria-pressed', 'true');
+});
 
-  await user.click(screen.getByRole('button', { name: 'Добавить в избранное' }));
+test('authenticated click → toggleFavorite, no login redirect', async () => {
+  fav.isAuthenticated = true;
+  render(<FavoriteButton listingId={LISTING} />);
+  await userEvent.click(screen.getByRole('button', { name: 'Добавить в избранное' }));
+  expect(fav.toggleFavorite).toHaveBeenCalledWith(LISTING);
+  expect(assignMock).not.toHaveBeenCalled();
+});
 
-  const pressedButton = screen.getByRole('button', { name: 'Убрать из избранного' });
-  expect(pressedButton).toHaveAttribute('aria-pressed', 'true');
-
-  await user.click(pressedButton);
-
-  const unpressedButton = screen.getByRole('button', { name: 'Добавить в избранное' });
-  expect(unpressedButton).toHaveAttribute('aria-pressed', 'false');
+test('guest click → redirect to login with return, no toggle', async () => {
+  fav.isAuthenticated = false;
+  render(<FavoriteButton listingId={LISTING} />);
+  await userEvent.click(screen.getByRole('button', { name: 'Добавить в избранное' }));
+  expect(fav.toggleFavorite).not.toHaveBeenCalled();
+  expect(assignMock).toHaveBeenCalledWith(expect.stringContaining('/auth/login?return='));
 });
 
 test('prevents the click default so a wrapping <Link> does not navigate', () => {
-  render(<FavoriteButton listingId={listingId} />);
-
-  // fireEvent.click returns false when the dispatched event's default action
-  // was prevented — exactly the signal that a parent <Link>'s navigation was suppressed.
-  const notCancelled = fireEvent.click(screen.getByRole('button'));
-
-  expect(notCancelled).toBe(false);
+  fav.isAuthenticated = true;
+  render(<FavoriteButton listingId={LISTING} />);
+  // fireEvent.click returns false when the handler called preventDefault
+  const notPrevented = fireEvent.click(screen.getByRole('button', { name: 'Добавить в избранное' }));
+  expect(notPrevented).toBe(false);
 });
